@@ -5,6 +5,8 @@ import { useAuth } from '../../context/AuthContext';
 import { Habit } from '../../types';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase';
+import { updateHabit, deleteHabit } from '../../services/habitService';
+import HabitCard from '../../components/habitCard';
 
 const HabitsScreen = () => {
   const { user } = useAuth();
@@ -31,7 +33,7 @@ const HabitsScreen = () => {
           frequency: data.frequency || 'daily',
           completed: data.completed || false,
           userId: data.userId || user.uid,
-          createdAt: data.createdAt ? data.createdAt.toDate() : new Date(), // Fallback to current date
+          createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
         } as Habit);
       });
       setHabits(habitsData);
@@ -48,46 +50,48 @@ const HabitsScreen = () => {
     router.push('/(dashboard)/AddHabit');
   };
 
-  const toggleHabitCompletion = (id: string) => {
-    Alert.alert('Info', 'Toggle functionality to be implemented');
+  const toggleHabitCompletion = async (id: string, completed: boolean) => {
+    try {
+      await updateHabit(id, { completed });
+      // No need to update state; onSnapshot handles it
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update habit completion');
+    }
   };
 
-  const deleteHabit = (id: string) => {
+  const handleDelete = async (id: string) => {
     Alert.alert(
       'Delete Habit',
       'Are you sure you want to delete this habit?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', onPress: () => Alert.alert('Info', 'Delete functionality to be implemented') },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteHabit(id);
+              // No need to update state; onSnapshot handles it
+            } catch (error) {
+              Alert.alert('Error', 'Failed to delete habit');
+            }
+          },
+        },
       ]
     );
   };
 
+  const handleEdit = (habit: Habit) => {
+    router.push({ pathname: '/(dashboard)/EditHabit', params: { habit: JSON.stringify(habit) } });
+  };
+
   const renderHabit = ({ item }: { item: Habit }) => (
-    <View
-      className={`bg-white rounded-lg p-4 mb-4 shadow-md ${
-        item.completed ? 'bg-green-100' : 'bg-white'
-      }`}
-    >
-      <View className="flex-row justify-between mb-2">
-        <Text className="text-lg font-bold text-gray-800">{item.title}</Text>
-        <TouchableOpacity onPress={() => deleteHabit(item.id)}>
-          <Text className="text-red-500 text-sm">Delete</Text>
-        </TouchableOpacity>
-      </View>
-      <Text className="text-gray-600 text-sm mb-2">{item.description}</Text>
-      <Text className="text-gray-500 text-xs mb-3">{item.frequency}</Text>
-      <TouchableOpacity
-        className={`p-2 rounded-md ${
-          item.completed ? 'bg-green-500' : 'bg-blue-600'
-        } items-center`}
-        onPress={() => toggleHabitCompletion(item.id)}
-      >
-        <Text className="text-white font-bold">
-          {item.completed ? 'Completed' : 'Mark Complete'}
-        </Text>
-      </TouchableOpacity>
-    </View>
+    <HabitCard
+      habit={item}
+      onToggle={toggleHabitCompletion}
+      onDelete={handleDelete}
+      onEdit={handleEdit}
+    />
   );
 
   return (
