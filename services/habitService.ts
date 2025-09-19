@@ -1,24 +1,41 @@
-import { db } from '../firebase';
-import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+// services/habitService.ts
+import { db, auth } from '../firebase';
+import { collection, addDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
 import { Habit } from '../types';
 
-const HABITS_COLLECTION = 'habits';
+export const addHabit = async (habit: Omit<Habit, 'id' | 'userId' | 'createdAt'>) => {
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error('User not logged in');
 
-export const createHabit = async (habit: Omit<Habit, 'id'>) => {
-  return await addDoc(collection(db, HABITS_COLLECTION), habit);
+    const habitData = {
+      ...habit,
+      userId: user.uid,
+      createdAt: serverTimestamp(),
+    };
+
+    const docRef = await addDoc(collection(db, 'habits'), habitData);
+    return { id: docRef.id, ...habitData };
+  } catch (error) {
+    console.error('Error adding habit:', error);
+    throw error;
+  }
 };
 
-export const getHabits = async (userId: string): Promise<Habit[]> => {
-  const querySnapshot = await getDocs(collection(db, HABITS_COLLECTION));
-  return querySnapshot.docs
-    .map(doc => ({ id: doc.id, ...doc.data() } as Habit))
-    .filter(habit => habit.userId === userId);
-};
+export const getHabits = async (): Promise<Habit[]> => {
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error('User not logged in');
 
-export const updateHabit = async (id: string, updates: Partial<Habit>) => {
-  return await updateDoc(doc(db, HABITS_COLLECTION, id), updates);
-};
-
-export const deleteHabit = async (id: string) => {
-  return await deleteDoc(doc(db, HABITS_COLLECTION, id));
+    const q = query(collection(db, 'habits'), where('userId', '==', user.uid));
+    const querySnapshot = await getDocs(q);
+    const habits: Habit[] = [];
+    querySnapshot.forEach((doc) => {
+      habits.push({ id: doc.id, ...doc.data() } as Habit);
+    });
+    return habits;
+  } catch (error) {
+    console.error('Error fetching habits:', error);
+    throw error;
+  }
 };
