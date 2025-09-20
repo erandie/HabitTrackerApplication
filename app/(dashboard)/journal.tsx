@@ -10,8 +10,7 @@ import { addJournal, updateJournal, deleteJournal } from '../../services/journal
 import JournalCard from '../../components/journalCard';
 import * as Notifications from 'expo-notifications';
 import { Picker } from '@react-native-picker/picker';
-import { useTheme } from '@react-navigation/native';
-
+import { useTheme } from '../_layout'; // Correct import for our custom theme
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -30,10 +29,10 @@ export default function JournalScreen() {
   const [filteredEntries, setFilteredEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [moodFilter, setMoodFilter] = useState('all');
-  
+  const [moodFilter, setMoodFilter] = useState('all');  
+  const { theme } = useTheme() || { theme: 'light' as const };
 
-  useEffect(() => {
+ useEffect(() => {
     if (!user) {
       Alert.alert('Error', 'You must be logged in to view journal');
       setLoading(false);
@@ -55,7 +54,7 @@ export default function JournalScreen() {
         } as JournalEntry);
       });
       setEntries(entriesData);
-      applyFilters(entriesData); // Apply filters on initial load
+      applyFilters(entriesData);
       setLoading(false);
     }, (error) => {
       Alert.alert('Error', 'Failed to load journal entries: ' + error.message);
@@ -66,26 +65,7 @@ export default function JournalScreen() {
     if (Platform.OS !== 'web') {
       scheduleDailyNotification();
     }
-
-    // Theme Styling
-    const { theme } = useTheme();
-    const applyTheme = () => {
-      if (theme === 'dark') {
-        document.body.style.backgroundColor = '#1a202c';
-        document.body.style.color = '#e2e8f0';
-      } else if (theme === 'pink') {
-        document.body.style.backgroundColor = '#f5e6e8';
-        document.body.style.color = '#4a2c2a';
-      } else {
-        document.body.style.backgroundColor = '#f5f6fa';
-        document.body.style.color = '#2d3748';
-      }
-    };
-    applyTheme();
-    return () => unsubscribe();
-
-    return () => unsubscribe();
-  }, [user]);
+  }, [user, theme]); // Keep theme in dependency array for consistency
 
   const applyFilters = (data: JournalEntry[]) => {
     let filtered = [...data];
@@ -165,7 +145,7 @@ export default function JournalScreen() {
   );
 
   return (
-    <View className="flex-1 p-5 bg-gray-50">
+    <View className="flex-1 p-5" style={{ backgroundColor: theme === 'dark' ? '#1a202c' : theme === 'pink' ? '#f5e6e8' : '#f5f6fa', color: theme === 'dark' ? '#e2e8f0' : theme === 'pink' ? '#4a2c2a' : '#2d3748' }}>
       <Text className="text-2xl font-bold text-gray-800 mb-4 text-center">My Journal</Text>
       <View className="mb-4">
         <TextInput

@@ -1,7 +1,7 @@
-import React, { createContext, useState } from "react";
+import React, { createContext, useContext, useState } from "react";
 import "./../global.css";
 import { AuthProvider } from "@/context/AuthContext";
-import { LoaderProvider } from "@/context/LoaderContext"
+import { LoaderProvider } from "@/context/LoaderContext";
 import { Slot } from "expo-router";
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
@@ -19,8 +19,10 @@ const ThemeContext = createContext<ThemeType>({
   setTheme: () => {},
 });
 
+export const useTheme = () => useContext<ThemeType>(ThemeContext);
+
 const RootLayout = () => {
-  const [theme, setTheme] = useState('light');
+  const [theme, setTheme] = useState<ThemeType['theme']>('light');
 
   useEffect(() => {
     if (Platform.OS !== 'web') {

@@ -9,7 +9,7 @@ import { db } from '../../firebase';
 import { addHabit, updateHabit, deleteHabit } from '../../services/habitService';
 import HabitCard from '../../components/habitCard';
 import * as Notifications from 'expo-notifications';
-import { useTheme } from '@react-navigation/native';
+import { useTheme } from '../_layout';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -29,6 +29,7 @@ export default function HabitsScreen() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showCompleted, setShowCompleted] = useState(false);
+  const { theme } = useTheme() || { theme: 'light' as const };
 
   useEffect(() => {
     if (!user) {
@@ -51,7 +52,7 @@ export default function HabitsScreen() {
         } as Habit);
       });
       setHabits(habitsData);
-      applyFilters(habitsData); // Apply filters on initial load
+      applyFilters(habitsData);
       setLoading(false);
     }, (error) => {
       Alert.alert('Error', 'Failed to load habits: ' + error.message);
@@ -62,24 +63,6 @@ export default function HabitsScreen() {
     if (Platform.OS !== 'web') {
       scheduleDailyHabitNotification();
     }
-
-    // Theme Styling
-    const { theme } = useTheme();
-    const applyTheme = () => {
-      if (theme === 'dark') {
-        document.body.style.backgroundColor = '#1a202c';
-        document.body.style.color = '#e2e8f0';
-      } else if (theme === 'pink') {
-        document.body.style.backgroundColor = '#f5e6e8';
-        document.body.style.color = '#4a2c2a';
-      } else {
-        document.body.style.backgroundColor = '#f5f6fa';
-        document.body.style.color = '#2d3748';
-      }
-    };
-    applyTheme();
-    return () => unsubscribe();
-    
   }, [user]);
 
   const applyFilters = (data: Habit[]) => {
@@ -162,44 +145,44 @@ export default function HabitsScreen() {
   );
 
   return (
-    <View className="flex-1 p-5 bg-gray-50">
-      <Text className="text-2xl font-bold text-gray-800 mb-4 text-center">My Habits</Text>
-      <View className="mb-4 flex-row items-center">
-        <TextInput
-          className="bg-white rounded-lg p-2 text-gray-800 flex-1 mr-2"
-          placeholder="Search by title..."
-          value={searchQuery}
-          onChangeText={text => {
-            setSearchQuery(text);
+  <View className="flex-1 p-5" style={{ backgroundColor: theme === 'dark' ? '#1a202c' : theme === 'pink' ? '#f5e6e8' : '#f5f6fa', color: theme === 'dark' ? '#e2e8f0' : theme === 'pink' ? '#4a2c2a' : '#2d3748' }}>
+    <Text className="text-2xl font-bold text-gray-800 mb-4 text-center">My Habits</Text>
+    <View className="mb-4 flex-row items-center">
+      <TextInput
+        className="bg-white rounded-lg p-2 text-gray-800 flex-1 mr-2"
+        placeholder="Search by title..."
+        value={searchQuery}
+        onChangeText={text => {
+          setSearchQuery(text);
+          applyFilters(habits);
+        }}
+      />
+      <View className="flex-row items-center">
+        <Text className="text-gray-600 mr-2">Show Completed</Text>
+        <Switch
+          value={showCompleted}
+          onValueChange={value => {
+            setShowCompleted(value);
             applyFilters(habits);
           }}
         />
-        <View className="flex-row items-center">
-          <Text className="text-gray-600 mr-2">Show Completed</Text>
-          <Switch
-            value={showCompleted}
-            onValueChange={value => {
-              setShowCompleted(value);
-              applyFilters(habits);
-            }}
-          />
-        </View>
       </View>
-      {loading ? (
-        <Text className="text-base text-gray-500 text-center mt-5">Loading habits...</Text>
-      ) : filteredHabits.length === 0 ? (
-        <Text className="text-base text-gray-500 text-center mt-5">No habits match your filter. Add one!</Text>
-      ) : (
-        <FlatList
-          data={filteredHabits}
-          renderItem={renderHabit}
-          keyExtractor={(item) => item.id}
-          contentContainerClassName="pb-20"
-        />
-      )}
-      <TouchableOpacity className="absolute bottom-6 right-6 bg-green-600 rounded-full p-3.5 shadow-md elevation-3" onPress={addNewHabit}>
-        <Text className="text-white font-bold text-lg">+ Add Habit</Text>
-      </TouchableOpacity>
     </View>
+    {loading ? (
+      <Text className="text-base text-gray-500 text-center mt-5">Loading habits...</Text>
+    ) : filteredHabits.length === 0 ? (
+      <Text className="text-base text-gray-500 text-center mt-5">No habits match your filter. Add one!</Text>
+    ) : (
+      <FlatList
+        data={filteredHabits}
+        renderItem={renderHabit}
+        keyExtractor={(item) => item.id}
+        contentContainerClassName="pb-20"
+      />
+    )}
+    <TouchableOpacity className="absolute bottom-6 right-6 bg-green-600 rounded-full p-3.5 shadow-md elevation-3" onPress={addNewHabit}>
+      <Text className="text-white font-bold text-lg">+ Add Habit</Text>
+    </TouchableOpacity>
+  </View>
   );
 }
