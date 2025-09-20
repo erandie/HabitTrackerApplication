@@ -1,4 +1,4 @@
-import React from "react";
+import React, { createContext, useState } from "react";
 import "./../global.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { LoaderProvider } from "@/context/LoaderContext"
@@ -8,7 +8,19 @@ import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { Alert } from 'react-native';
 
+// Define the theme type
+type ThemeType = {
+  theme: 'light' | 'dark' | 'pink';
+  setTheme: (theme: 'light' | 'dark' | 'pink') => void;
+};
+
+const ThemeContext = createContext<ThemeType>({
+  theme: 'light',
+  setTheme: () => {},
+});
+
 const RootLayout = () => {
+  const [theme, setTheme] = useState('light');
 
   useEffect(() => {
     if (Platform.OS !== 'web') {
@@ -22,11 +34,13 @@ const RootLayout = () => {
   }, []);
 
   return (
+    <ThemeContext.Provider value={{ theme, setTheme }}>
       <LoaderProvider>
         <AuthProvider>
           <Slot />
         </AuthProvider>
       </LoaderProvider>
+    </ThemeContext.Provider>
   );
 };
 

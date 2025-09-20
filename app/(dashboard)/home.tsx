@@ -1,4 +1,3 @@
-// app/(dashboard)/home.tsx
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -14,6 +13,7 @@ export default function HomeScreen() {
   const [habitCompletionRate, setHabitCompletionRate] = useState(0);
   const [journalFrequencyData, setJournalFrequencyData] = useState<number[]>(new Array(7).fill(0));
   const [streak, setStreak] = useState(0);
+  const [theme, setTheme] = useState<'light' | 'dark' | 'pink'>('light');
 
   useEffect(() => {
     const calculateAnalytics = async () => {
@@ -59,7 +59,24 @@ export default function HomeScreen() {
     };
 
     calculateAnalytics();
-  }, [user]);
+
+    // Theme Styling
+    const applyTheme = () => {
+      if (theme === 'dark') {
+        document.body.style.backgroundColor = '#1a202c';
+        document.body.style.color = '#e2e8f0';
+      } else if (theme === 'pink') {
+        document.body.style.backgroundColor = '#f5e6e8';
+        document.body.style.color = '#4a2c2a';
+      } else {
+        document.body.style.backgroundColor = '#f5f6fa';
+        document.body.style.color = '#2d3748';
+      }
+    };
+
+    applyTheme();
+
+  }, [user, theme]);
 
   const handleLogout = async () => {
     Alert.alert(
@@ -77,6 +94,28 @@ export default function HomeScreen() {
         <View className="flex-1 p-5 bg-gray-50">
           <Text className="text-3xl font-bold text-gray-800 mb-2 text-center">Welcome, {user?.email || 'Guest'}</Text>
           <Text className="text-base text-gray-600 mb-6 text-center">Track your habits and journal your thoughts</Text>
+
+          {/* Theme Toggle */}
+            <View className="flex-row justify-center mb-4">
+              <TouchableOpacity
+                className={`px-4 py-2 rounded-md mr-2 ${theme === 'light' ? 'bg-blue-600' : 'bg-gray-300'}`}
+                onPress={() => setTheme('light')}
+              >
+                <Text className={`${theme === 'light' ? 'text-white' : 'text-gray-600'} font-medium`}>Light</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={`px-4 py-2 rounded-md mr-2 ${theme === 'dark' ? 'bg-blue-600' : 'bg-gray-300'}`}
+                onPress={() => setTheme('dark')}
+              >
+                <Text className={`${theme === 'dark' ? 'text-white' : 'text-gray-600'} font-medium`}>Dark</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={`px-4 py-2 rounded-md ${theme === 'pink' ? 'bg-blue-600' : 'bg-gray-300'}`}
+                onPress={() => setTheme('pink')}
+              >
+                <Text className={`${theme === 'pink' ? 'text-white' : 'text-gray-600'} font-medium`}>Pink</Text>
+              </TouchableOpacity>
+            </View>
 
           {/* Analytics Dashboard with Charts */}
           <View className="mb-6">

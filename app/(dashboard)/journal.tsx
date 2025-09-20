@@ -10,6 +10,8 @@ import { addJournal, updateJournal, deleteJournal } from '../../services/journal
 import JournalCard from '../../components/journalCard';
 import * as Notifications from 'expo-notifications';
 import { Picker } from '@react-native-picker/picker';
+import { useTheme } from '@react-navigation/native';
+
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -29,6 +31,7 @@ export default function JournalScreen() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [moodFilter, setMoodFilter] = useState('all');
+  
 
   useEffect(() => {
     if (!user) {
@@ -63,6 +66,23 @@ export default function JournalScreen() {
     if (Platform.OS !== 'web') {
       scheduleDailyNotification();
     }
+
+    // Theme Styling
+    const { theme } = useTheme();
+    const applyTheme = () => {
+      if (theme === 'dark') {
+        document.body.style.backgroundColor = '#1a202c';
+        document.body.style.color = '#e2e8f0';
+      } else if (theme === 'pink') {
+        document.body.style.backgroundColor = '#f5e6e8';
+        document.body.style.color = '#4a2c2a';
+      } else {
+        document.body.style.backgroundColor = '#f5f6fa';
+        document.body.style.color = '#2d3748';
+      }
+    };
+    applyTheme();
+    return () => unsubscribe();
 
     return () => unsubscribe();
   }, [user]);

@@ -9,6 +9,7 @@ import { db } from '../../firebase';
 import { addHabit, updateHabit, deleteHabit } from '../../services/habitService';
 import HabitCard from '../../components/habitCard';
 import * as Notifications from 'expo-notifications';
+import { useTheme } from '@react-navigation/native';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -62,7 +63,23 @@ export default function HabitsScreen() {
       scheduleDailyHabitNotification();
     }
 
+    // Theme Styling
+    const { theme } = useTheme();
+    const applyTheme = () => {
+      if (theme === 'dark') {
+        document.body.style.backgroundColor = '#1a202c';
+        document.body.style.color = '#e2e8f0';
+      } else if (theme === 'pink') {
+        document.body.style.backgroundColor = '#f5e6e8';
+        document.body.style.color = '#4a2c2a';
+      } else {
+        document.body.style.backgroundColor = '#f5f6fa';
+        document.body.style.color = '#2d3748';
+      }
+    };
+    applyTheme();
     return () => unsubscribe();
+    
   }, [user]);
 
   const applyFilters = (data: Habit[]) => {

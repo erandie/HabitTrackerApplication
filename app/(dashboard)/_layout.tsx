@@ -55,5 +55,7 @@ export default function DashboardLayout() {
       <Tabs.Screen name="EditProfile" options={{ href: null }} />
 
     </Tabs>
+
+
   );
 }
