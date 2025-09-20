@@ -81,7 +81,7 @@ export default function HomeScreen() {
           {/* Analytics Dashboard with Charts */}
           <View className="mb-6">
             <Text className="text-xl font-bold text-gray-800 mb-4">Your Progress</Text>
-            <ScrollView className="h-80">
+            <ScrollView className="h-full">
               {/* Habit Completion Bar Chart */}
               <View className="mb-4">
                 <Text className="text-lg text-gray-600 mb-2">Habit Completion Rate</Text>
