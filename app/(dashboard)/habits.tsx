@@ -1,14 +1,26 @@
+// app/(dashboard)/habits.tsx
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { Habit } from '../../types';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase';
-import { updateHabit, deleteHabit } from '../../services/habitService';
+import { addHabit, updateHabit, deleteHabit } from '../../services/habitService';
 import HabitCard from '../../components/habitCard';
+import * as Notifications from 'expo-notifications';
 
-const HabitsScreen = () => {
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
+
+export default function HabitsScreen() {
   const { user } = useAuth();
   const router = useRouter();
   const [habits, setHabits] = useState<Habit[]>([]);
@@ -29,8 +41,6 @@ const HabitsScreen = () => {
         habitsData.push({
           id: doc.id,
           title: data.title || 'Untitled',
-          description: data.description || '',
-          frequency: data.frequency || 'daily',
           completed: data.completed || false,
           userId: data.userId || user.uid,
           createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
@@ -39,30 +49,55 @@ const HabitsScreen = () => {
       setHabits(habitsData);
       setLoading(false);
     }, (error) => {
-      Alert.alert('Error', 'Failed to load habits: ' + error.message);
+      Alert.alert('Error', 'Failed to load habits: ' + error.message); // Fixed here
       console.error('Snapshot error:', error);
       setLoading(false);
     });
 
+    // Schedule daily habit reminder only on mobile
+    if (Platform.OS !== 'web') {
+      scheduleDailyHabitNotification();
+    }
+
     return () => unsubscribe();
   }, [user]);
 
-  const addNewHabit = () => {
-    router.push('/(dashboard)/AddHabit');
+  const scheduleDailyHabitNotification = async () => {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Habit Check! ⏰',
+        body: 'Time to check off your habits today.',
+        data: { screen: 'habits' },
+      },
+      trigger: { seconds: 10 }, // Test with 10 seconds, change to { hour: 8, minute: 0, repeats: true } later
+    });
   };
 
-  const toggleHabitCompletion = async (id: string, completed: boolean) => {
+  const addNewHabit = async () => {
+    router.push('/(dashboard)/AddHabit');
+    // Schedule a notification 5 seconds after adding, only on mobile
+    if (Platform.OS !== 'web') {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: 'Awesome Work! 🌟',
+          body: 'You added a new habit. Keep it up!',
+          data: { screen: 'habits' },
+        },
+        trigger: { seconds: 5 }, // 5 seconds for testing, change to { hours: 1 } later
+      });
+    }
+  };
+
+  const handleToggle = async (id: string, completed: boolean) => {
     try {
-      console.log('Toggling habit:', id, 'to completed:', completed); // Debug
-      await updateHabit(id, { completed });
-    } catch (error) {
-      Alert.alert('Error', 'Failed to update habit completion');
-      console.error('Toggle error:', error);
+      await updateHabit(id, { completed: !completed });
+    } catch (error: any) {
+      Alert.alert('Error', 'Failed to update habit: ' + error.message);
+      console.error('Update error:', error);
     }
   };
 
   const handleDelete = async (id: string) => {
-    console.log('handleDelete called with ID:', id); // Debug: Confirm handler fires
     Alert.alert(
       'Delete Habit',
       'Are you sure you want to delete this habit?',
@@ -72,14 +107,12 @@ const HabitsScreen = () => {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            console.log('Delete confirmed, calling deleteHabit for ID:', id); // Debug: Confirm onPress
             try {
               await deleteHabit(id);
-              console.log('deleteHabit returned successfully for ID:', id); // Debug: Success
               Alert.alert('Success', 'Habit deleted successfully');
             } catch (error: any) {
-              console.error('Delete failed in handleDelete:', error.message || error);
-              Alert.alert('Error', 'Failed to delete habit: ' + (error.message || 'Unknown error'));
+              Alert.alert('Error', 'Failed to delete habit: ' + error.message);
+              console.error('Delete error:', error);
             }
           },
         },
@@ -87,46 +120,32 @@ const HabitsScreen = () => {
     );
   };
 
-  const handleEdit = (habit: Habit) => {
-    console.log('Navigating to EditHabit with habit ID:', habit.id); // Debug
-    router.push({
-      pathname: '/(dashboard)/EditHabit',
-      params: { habit: JSON.stringify(habit) },
-    });
-  };
-
   const renderHabit = ({ item }: { item: Habit }) => (
     <HabitCard
       habit={item}
-      onToggle={toggleHabitCompletion}
+      onToggle={handleToggle}
       onDelete={handleDelete}
-      onEdit={handleEdit}
     />
   );
 
   return (
-    <View className="flex-1 p-5 bg-gray-100">
-      <Text className="text-2xl font-bold text-gray-800 mb-5">My Habits</Text>
+    <View className="flex-1 p-5 bg-gray-50">
+      <Text className="text-2xl font-bold text-gray-800 mb-4 text-center">My Habits</Text>
       {loading ? (
-        <Text className="text-gray-600 text-center text-base mt-5">Loading habits...</Text>
+        <Text className="text-base text-gray-500 text-center mt-5">Loading habits...</Text>
       ) : habits.length === 0 ? (
-        <Text className="text-gray-600 text-center text-base mt-5">No habits yet. Add one!</Text>
+        <Text className="text-base text-gray-500 text-center mt-5">No habits yet. Add one!</Text>
       ) : (
         <FlatList
           data={habits}
           renderItem={renderHabit}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingBottom: 80 }}
+          contentContainerClassName="pb-20"
         />
       )}
-      <TouchableOpacity
-        className="absolute bottom-5 right-5 bg-blue-600 p-4 rounded-full shadow-lg"
-        onPress={addNewHabit}
-      >
-        <Text className="text-white font-bold text-base">+ Add New Habit</Text>
+      <TouchableOpacity className="absolute bottom-6 right-6 bg-green-600 rounded-full p-3.5 shadow-md elevation-3" onPress={addNewHabit}>
+        <Text className="text-white font-bold text-lg">+ Add Habit</Text>
       </TouchableOpacity>
     </View>
   );
-};
-
-export default HabitsScreen;
+}
