@@ -1,6 +1,6 @@
 // app/(dashboard)/habits.tsx
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert, Platform } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Alert, Platform, TextInput, Switch } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { Habit } from '../../types';
@@ -24,7 +24,10 @@ export default function HabitsScreen() {
   const { user } = useAuth();
   const router = useRouter();
   const [habits, setHabits] = useState<Habit[]>([]);
+  const [filteredHabits, setFilteredHabits] = useState<Habit[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showCompleted, setShowCompleted] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -47,20 +50,33 @@ export default function HabitsScreen() {
         } as Habit);
       });
       setHabits(habitsData);
+      applyFilters(habitsData); // Apply filters on initial load
       setLoading(false);
     }, (error) => {
-      Alert.alert('Error', 'Failed to load habits: ' + error.message); // Fixed here
+      Alert.alert('Error', 'Failed to load habits: ' + error.message);
       console.error('Snapshot error:', error);
       setLoading(false);
     });
 
-    // Schedule daily habit reminder only on mobile
     if (Platform.OS !== 'web') {
       scheduleDailyHabitNotification();
     }
 
     return () => unsubscribe();
   }, [user]);
+
+  const applyFilters = (data: Habit[]) => {
+    let filtered = [...data];
+    if (searchQuery) {
+      filtered = filtered.filter(habit =>
+        habit.title.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    if (!showCompleted) {
+      filtered = filtered.filter(habit => !habit.completed);
+    }
+    setFilteredHabits(filtered);
+  };
 
   const scheduleDailyHabitNotification = async () => {
     await Notifications.scheduleNotificationAsync({
@@ -69,13 +85,12 @@ export default function HabitsScreen() {
         body: 'Time to check off your habits today.',
         data: { screen: 'habits' },
       },
-      trigger: { seconds: 10 }, // Test with 10 seconds, change to { hour: 8, minute: 0, repeats: true } later
+      trigger: { seconds: 10 }, // Test with 10 seconds
     });
   };
 
   const addNewHabit = async () => {
     router.push('/(dashboard)/AddHabit');
-    // Schedule a notification 5 seconds after adding, only on mobile
     if (Platform.OS !== 'web') {
       await Notifications.scheduleNotificationAsync({
         content: {
@@ -83,7 +98,7 @@ export default function HabitsScreen() {
           body: 'You added a new habit. Keep it up!',
           data: { screen: 'habits' },
         },
-        trigger: { seconds: 5 }, // 5 seconds for testing, change to { hours: 1 } later
+        trigger: { seconds: 5 },
       });
     }
   };
@@ -91,6 +106,7 @@ export default function HabitsScreen() {
   const handleToggle = async (id: string, completed: boolean) => {
     try {
       await updateHabit(id, { completed: !completed });
+      applyFilters(habits); // Reapply filters after toggle
     } catch (error: any) {
       Alert.alert('Error', 'Failed to update habit: ' + error.message);
       console.error('Update error:', error);
@@ -131,13 +147,34 @@ export default function HabitsScreen() {
   return (
     <View className="flex-1 p-5 bg-gray-50">
       <Text className="text-2xl font-bold text-gray-800 mb-4 text-center">My Habits</Text>
+      <View className="mb-4 flex-row items-center">
+        <TextInput
+          className="bg-white rounded-lg p-2 text-gray-800 flex-1 mr-2"
+          placeholder="Search by title..."
+          value={searchQuery}
+          onChangeText={text => {
+            setSearchQuery(text);
+            applyFilters(habits);
+          }}
+        />
+        <View className="flex-row items-center">
+          <Text className="text-gray-600 mr-2">Show Completed</Text>
+          <Switch
+            value={showCompleted}
+            onValueChange={value => {
+              setShowCompleted(value);
+              applyFilters(habits);
+            }}
+          />
+        </View>
+      </View>
       {loading ? (
         <Text className="text-base text-gray-500 text-center mt-5">Loading habits...</Text>
-      ) : habits.length === 0 ? (
-        <Text className="text-base text-gray-500 text-center mt-5">No habits yet. Add one!</Text>
+      ) : filteredHabits.length === 0 ? (
+        <Text className="text-base text-gray-500 text-center mt-5">No habits match your filter. Add one!</Text>
       ) : (
         <FlatList
-          data={habits}
+          data={filteredHabits}
           renderItem={renderHabit}
           keyExtractor={(item) => item.id}
           contentContainerClassName="pb-20"

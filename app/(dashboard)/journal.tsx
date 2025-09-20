@@ -1,6 +1,6 @@
 // app/(dashboard)/journal.tsx
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert, Platform } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Alert, Platform, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { JournalEntry } from '../../types';
@@ -9,6 +9,7 @@ import { db } from '../../firebase';
 import { addJournal, updateJournal, deleteJournal } from '../../services/journalService';
 import JournalCard from '../../components/journalCard';
 import * as Notifications from 'expo-notifications';
+import { Picker } from '@react-native-picker/picker';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -24,7 +25,10 @@ export default function JournalScreen() {
   const { user } = useAuth();
   const router = useRouter();
   const [entries, setEntries] = useState<JournalEntry[]>([]);
+  const [filteredEntries, setFilteredEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [moodFilter, setMoodFilter] = useState('all');
 
   useEffect(() => {
     if (!user) {
@@ -48,6 +52,7 @@ export default function JournalScreen() {
         } as JournalEntry);
       });
       setEntries(entriesData);
+      applyFilters(entriesData); // Apply filters on initial load
       setLoading(false);
     }, (error) => {
       Alert.alert('Error', 'Failed to load journal entries: ' + error.message);
@@ -55,13 +60,26 @@ export default function JournalScreen() {
       setLoading(false);
     });
 
-    // Schedule daily notification only on mobile
     if (Platform.OS !== 'web') {
       scheduleDailyNotification();
     }
 
     return () => unsubscribe();
   }, [user]);
+
+  const applyFilters = (data: JournalEntry[]) => {
+    let filtered = [...data];
+    if (searchQuery) {
+      filtered = filtered.filter(entry =>
+        entry.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        entry.content.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    if (moodFilter !== 'all') {
+      filtered = filtered.filter(entry => entry.mood === moodFilter);
+    }
+    setFilteredEntries(filtered);
+  };
 
   const scheduleDailyNotification = async () => {
     await Notifications.scheduleNotificationAsync({
@@ -70,17 +88,12 @@ export default function JournalScreen() {
         body: 'Take a moment to record your thoughts today.',
         data: { screen: 'journal' },
       },
-      trigger: {
-        hour: 18, // 6 PM local time
-        minute: 0,
-        repeats: true,
-      },
+      trigger: { seconds: 10 }, // Test with 10 seconds
     });
   };
 
   const addNewEntry = async () => {
     router.push('/(dashboard)/AddJournal');
-    // Schedule a notification 1 hour after adding, only on mobile
     if (Platform.OS !== 'web') {
       await Notifications.scheduleNotificationAsync({
         content: {
@@ -88,7 +101,7 @@ export default function JournalScreen() {
           body: 'You added a journal entry. Want to add more?',
           data: { screen: 'journal' },
         },
-        trigger: { seconds: 5 }, // 5 seconds for testing, change to { hours: 1 } later
+        trigger: { seconds: 5 },
       });
     }
   };
@@ -134,13 +147,39 @@ export default function JournalScreen() {
   return (
     <View className="flex-1 p-5 bg-gray-50">
       <Text className="text-2xl font-bold text-gray-800 mb-4 text-center">My Journal</Text>
+      <View className="mb-4">
+        <TextInput
+          className="bg-white rounded-lg p-2 text-gray-800 mb-2"
+          placeholder="Search by title or content..."
+          value={searchQuery}
+          onChangeText={text => {
+            setSearchQuery(text);
+            applyFilters(entries);
+          }}
+        />
+        <View className="bg-white rounded-lg p-1">
+          <Picker
+            selectedValue={moodFilter}
+            onValueChange={(value) => {
+              setMoodFilter(value);
+              applyFilters(entries);
+            }}
+            className="text-gray-800"
+          >
+            <Picker.Item label="All Moods" value="all" />
+            <Picker.Item label="Happy 😊" value="happy" />
+            <Picker.Item label="Sad 😢" value="sad" />
+            <Picker.Item label="Neutral 😐" value="neutral" />
+          </Picker>
+        </View>
+      </View>
       {loading ? (
         <Text className="text-base text-gray-500 text-center mt-5">Loading entries...</Text>
-      ) : entries.length === 0 ? (
-        <Text className="text-base text-gray-500 text-center mt-5">No entries yet. Add one!</Text>
+      ) : filteredEntries.length === 0 ? (
+        <Text className="text-base text-gray-500 text-center mt-5">No entries match your filter. Add one!</Text>
       ) : (
         <FlatList
-          data={entries}
+          data={filteredEntries}
           renderItem={renderEntry}
           keyExtractor={(item) => item.id}
           contentContainerClassName="pb-20"
