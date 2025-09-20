@@ -21,7 +21,8 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.HabitTracker"
+      "package": "com.anonymous.HabitTracker",
+      "useNextNotificationsApi": true
     },
     "web": {
       "output": "static",
@@ -41,18 +42,12 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
-    ],
-    "expo": {
-      "plugins": [
-        "expo-notifications"
       ],
-      "android": {
-        "useNextNotificationsApi": true
-      },
-      "notification": {
-        "icon": "./assets/icon.png"
-      }
+      "expo-notifications"
+    ],
+    
+    "notification": {
+      "icon": "./assets/icon.png"
     },
     "experiments": {
       "typedRoutes": true,
