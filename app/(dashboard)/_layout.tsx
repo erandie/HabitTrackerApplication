@@ -47,6 +47,12 @@ export default function DashboardLayout() {
           ),
         }}
       />
+
+      <Tabs.Screen name="AddHabit" options={{ href: null }} /> {/* Hide this route */}
+      <Tabs.Screen name="EditHabit" options={{ href: null }} /> 
+      <Tabs.Screen name="AddJournal" options={{ href: null }} /> 
+      <Tabs.Screen name="EditJournal" options={{ href: null }} /> 
+
     </Tabs>
   );
 }
