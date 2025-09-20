@@ -1,6 +1,6 @@
 // app/(dashboard)/journal.tsx
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { JournalEntry } from '../../types';
@@ -8,8 +8,19 @@ import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { addJournal, updateJournal, deleteJournal } from '../../services/journalService';
 import JournalCard from '../../components/journalCard';
+import * as Notifications from 'expo-notifications';
 
-const JournalScreen = () => {
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
+
+export default function JournalScreen() {
   const { user } = useAuth();
   const router = useRouter();
   const [entries, setEntries] = useState<JournalEntry[]>([]);
@@ -44,11 +55,42 @@ const JournalScreen = () => {
       setLoading(false);
     });
 
+    // Schedule daily notification only on mobile
+    if (Platform.OS !== 'web') {
+      scheduleDailyNotification();
+    }
+
     return () => unsubscribe();
   }, [user]);
 
-  const addNewEntry = () => {
+  const scheduleDailyNotification = async () => {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Journal Time! 📝',
+        body: 'Take a moment to record your thoughts today.',
+        data: { screen: 'journal' },
+      },
+      trigger: {
+        hour: 18, // 6 PM local time
+        minute: 0,
+        repeats: true,
+      },
+    });
+  };
+
+  const addNewEntry = async () => {
     router.push('/(dashboard)/AddJournal');
+    // Schedule a notification 1 hour after adding, only on mobile
+    if (Platform.OS !== 'web') {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: 'Great Job! 🎉',
+          body: 'You added a journal entry. Want to add more?',
+          data: { screen: 'journal' },
+        },
+        trigger: { seconds: 5 }, // 5 seconds for testing, change to { hours: 1 } later
+      });
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -90,8 +132,8 @@ const JournalScreen = () => {
   );
 
   return (
-    <View className="flex-1 p-4 bg-white">
-      <Text className="text-2xl font-bold text-gray-700 mb-4 text-center">My Journal</Text>
+    <View className="flex-1 p-5 bg-gray-50">
+      <Text className="text-2xl font-bold text-gray-800 mb-4 text-center">My Journal</Text>
       {loading ? (
         <Text className="text-base text-gray-500 text-center mt-5">Loading entries...</Text>
       ) : entries.length === 0 ? (
@@ -109,7 +151,4 @@ const JournalScreen = () => {
       </TouchableOpacity>
     </View>
   );
-};
-
-// No need for separate StyleSheet import since we're using Tailwind
-export default JournalScreen;
+}
