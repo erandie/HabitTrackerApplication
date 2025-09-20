@@ -136,14 +136,21 @@ export default function HabitsScreen() {
     );
   };
 
+  const handleEdit = (habit: Habit) => {
+    router.push({
+      pathname: '/(dashboard)/EditHabit',
+      params: { habit: JSON.stringify(habit) },
+    });
+  };
+
   const renderHabit = ({ item }: { item: Habit }) => (
     <HabitCard
       habit={item}
       onToggle={handleToggle}
       onDelete={handleDelete}
+      onEdit={handleEdit} // Pass the function directly
     />
-  );
-
+    );
   return (
   <View className="flex-1 p-5" style={{ backgroundColor: theme === 'dark' ? '#1a202c' : theme === 'pink' ? '#f5e6e8' : '#f5f6fa', color: theme === 'dark' ? '#e2e8f0' : theme === 'pink' ? '#4a2c2a' : '#2d3748' }}>
     <Text className="text-2xl font-bold text-gray-800 mb-4 text-center">My Habits</Text>

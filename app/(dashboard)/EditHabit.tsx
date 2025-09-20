@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { updateHabit } from '../../services/habitService';
@@ -40,92 +40,39 @@ const EditHabit = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Edit Habit</Text>
+    <View className="flex-1 p-5 bg-gray-100">
+      <Text className="text-2xl font-bold text-gray-700 mb-5 text-center">Edit Habit</Text>
       <TextInput
-        style={styles.input}
+        className="bg-white rounded-lg p-3 mb-3 text-gray-800"
         placeholder="Habit Title (e.g., Drink Water)"
         value={title}
         onChangeText={setTitle}
       />
       <TextInput
-        style={styles.input}
+        className="bg-white rounded-lg p-3 mb-3 text-gray-800"
         placeholder="Description (optional)"
         value={description}
         onChangeText={setDescription}
       />
-      <View style={styles.frequencyContainer}>
+      <View className="flex-row justify-between mb-5">
         <TouchableOpacity
-          style={[styles.frequencyButton, frequency === 'daily' && styles.selectedFrequency]}
+          className={`flex-1 p-3 rounded-lg bg-white items-center mr-2 ${frequency === 'daily' ? 'bg-blue-500' : ''}`}
           onPress={() => setFrequency('daily')}
         >
-          <Text style={styles.frequencyText}>Daily</Text>
+          <Text className={`text-base ${frequency === 'daily' ? 'text-white' : 'text-gray-700'}`}>Daily</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.frequencyButton, frequency === 'weekly' && styles.selectedFrequency]}
+          className={`flex-1 p-3 rounded-lg bg-white items-center ml-2 ${frequency === 'weekly' ? 'bg-blue-500' : ''}`}
           onPress={() => setFrequency('weekly')}
         >
-          <Text style={styles.frequencyText}>Weekly</Text>
+          <Text className={`text-base ${frequency === 'weekly' ? 'text-white' : 'text-gray-700'}`}>Weekly</Text>
         </TouchableOpacity>
       </View>
-      <TouchableOpacity style={styles.saveButton} onPress={handleSaveHabit}>
-        <Text style={styles.saveButtonText}>Save Changes</Text>
+      <TouchableOpacity className="bg-blue-600 p-3 rounded-lg items-center" onPress={handleSaveHabit}>
+        <Text className="text-white font-bold text-base">Save Changes</Text>
       </TouchableOpacity>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: '#f8f9fa',
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 20,
-  },
-  input: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-    fontSize: 16,
-    color: '#333',
-  },
-  frequencyContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  frequencyButton: {
-    flex: 1,
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    marginHorizontal: 4,
-  },
-  selectedFrequency: {
-    backgroundColor: '#4a6bdf',
-  },
-  frequencyText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  saveButton: {
-    backgroundColor: '#4a6bdf',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  saveButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-});
 
 export default EditHabit;

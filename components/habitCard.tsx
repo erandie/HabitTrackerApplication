@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { Habit } from '../types';
 
 interface HabitCardProps {
@@ -11,12 +11,12 @@ interface HabitCardProps {
 
 const HabitCard: React.FC<HabitCardProps> = ({ habit, onToggle, onDelete, onEdit }) => {
   return (
-    <View style={[styles.card, habit.completed && styles.completedCard]}>
-      <View style={styles.header}>
-        <Text style={styles.title}>{habit.title}</Text>
-        <View style={styles.actions}>
+    <View className={`bg-white rounded-lg p-4 mb-3 shadow-md ${habit.completed ? 'bg-green-50' : ''}`}>
+      <View className="flex-row justify-between items-center">
+        <Text className="text-lg font-bold">{habit.title}</Text>
+        <View className="flex-row gap-3">
           <TouchableOpacity onPress={() => onEdit(habit)}>
-            <Text style={styles.edit}>Edit</Text>
+            <Text className="text-blue-600 text-sm">Edit</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => {
@@ -24,52 +24,22 @@ const HabitCard: React.FC<HabitCardProps> = ({ habit, onToggle, onDelete, onEdit
               onDelete(habit.id);
             }}
           >
-            <Text style={styles.delete}>Delete</Text>
+            <Text className="text-red-600 text-sm">Delete</Text>
           </TouchableOpacity>
         </View>
       </View>
-      <Text style={styles.description}>{habit.description}</Text>
-      <Text style={styles.frequency}>{habit.frequency}</Text>
+      <Text className="text-gray-600 mt-2">{habit.description}</Text>
+      <Text className="text-gray-500 mb-3">{habit.frequency}</Text>
       <TouchableOpacity
-        style={[styles.button, habit.completed && styles.completedButton]}
+        className={`bg-blue-600 p-2 rounded-md items-center ${habit.completed ? 'bg-green-600' : ''}`}
         onPress={() => onToggle(habit.id, !habit.completed)}
       >
-        <Text style={styles.buttonText}>
+        <Text className="text-white font-bold">
           {habit.completed ? 'Completed' : 'Mark Complete'}
         </Text>
       </TouchableOpacity>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  completedCard: { backgroundColor: '#e6f7e9' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  title: { fontSize: 18, fontWeight: 'bold' },
-  actions: { flexDirection: 'row', gap: 12 },
-  edit: { color: '#4a6bdf', fontSize: 14 },
-  delete: { color: 'red', fontSize: 14 },
-  description: { marginVertical: 8 },
-  frequency: { color: '#666', marginBottom: 12 },
-  button: {
-    backgroundColor: '#4a6bdf',
-    padding: 10,
-    borderRadius: 4,
-    alignItems: 'center',
-  },
-  completedButton: { backgroundColor: '#4caf50' },
-  buttonText: { color: '#fff', fontWeight: 'bold' },
-});
 
 export default HabitCard;

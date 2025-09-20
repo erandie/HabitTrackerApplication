@@ -84,7 +84,7 @@ export default function EditProfile() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Edit Profile - User: {user?.displayName || 'No user'}</Text>
+      <Text style={styles.title}>User: {user?.displayName || 'No user'}</Text>
       <TextInput style={styles.input} placeholder="Display Name" value={displayName} onChangeText={setDisplayName} />
       <TextInput style={styles.input} placeholder="New Email" value={email} onChangeText={setEmail} keyboardType="email-address" />
       <TextInput style={styles.input} placeholder="Current Password (for verification)" value={password} onChangeText={setPassword} secureTextEntry />
