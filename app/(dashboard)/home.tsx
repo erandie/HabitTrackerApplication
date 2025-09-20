@@ -71,13 +71,20 @@ export default function HomeScreen() {
       ]
     );
   };
+
+  const getGreeting = () => {
+  const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning,';
+    if (hour < 17) return 'Good Afternoon,';
+    return 'Good Evening,';
+  };
   
-
-      return (
+    return (
       <View className="flex-1 p-5" style={{ backgroundColor: theme === 'dark' ? '#1a202c' : theme === 'pink' ? '#f5e6e8' : '#f5f6fa', color: theme === 'dark' ? '#e2e8f0' : theme === 'pink' ? '#4a2c2a' : '#2d3748' }}>
-        <Text className="text-3xl font-bold text-gray-800 mb-2 text-center">Welcome, {user?.email || 'Guest'}</Text>
+        <Text className="text-3xl font-bold text-gray-800 mb-2 text-center">
+          {getGreeting()} {user?.displayName || user?.email || 'Guest'}!
+        </Text>
         <Text className="text-base text-gray-600 mb-6 text-center">Track your habits and journal your thoughts</Text>
-
         {/* Theme Toggle */}
         <View className="flex-row justify-center mb-4">
           <TouchableOpacity
