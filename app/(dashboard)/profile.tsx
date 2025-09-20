@@ -15,22 +15,41 @@ export default function ProfileScreen() {
   const [journalCount, setJournalCount] = useState(0);
   const [streak, setStreak] = useState(0); // Placeholder for streak logic
 
-  useEffect(() => {
+    useEffect(() => {
     const fetchCounts = async () => {
       if (!user) return;
 
-      // Fetch habits count
       const habitsQuery = query(collection(db, 'habits'), where('userId', '==', user.uid));
       const habitsSnapshot = await getDocs(habitsQuery);
       setHabitsCount(habitsSnapshot.size);
 
-      // Fetch journal entries count
       const journalQuery = query(collection(db, 'journals'), where('userId', '==', user.uid));
       const journalSnapshot = await getDocs(journalQuery);
       setJournalCount(journalSnapshot.size);
 
-      // Placeholder for streak (implement logic based on completed habits)
-      setStreak(7); // Replace with actual streak calculation
+      // Streak logic
+      const completedHabits = habitsSnapshot.docs
+        .filter(doc => doc.data().completed)
+        .map(doc => doc.data().createdAt?.toDate() || new Date());
+      if (completedHabits.length > 0) {
+        completedHabits.sort((a, b) => b - a); // Latest first
+        let streak = 0;
+        let currentDate = new Date();
+        for (let completed of completedHabits) {
+          const diffDays = Math.floor((currentDate.getTime() - completed.getTime()) / (1000 * 60 * 60 * 24));
+          if (diffDays <= streak) {
+            streak++;
+          } else {
+            break;
+          }
+          currentDate = completed;
+        }
+        setStreak(streak);
+      } else {
+        setStreak(0);
+      }
+
+      console.log('Profile loaded - Habits:', habitsCount, 'Journals:', journalCount, 'Streak:', streak);
     };
 
     fetchCounts();
