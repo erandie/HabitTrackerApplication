@@ -78,7 +78,7 @@ export default function ProfileScreen() {
             {user?.email?.charAt(0).toUpperCase() || 'U'}
           </Text>
         </View>
-        <Text className="text-xl font-bold text-gray-800 mb-1">User Name</Text>
+        <Text className="text-xl font-bold text-gray-800 mb-1">User Name: {user?.displayName || 'No nickname'}</Text>
         <Text className="text-base text-gray-600">{user?.email || 'No email'}</Text>
       </View>
 
