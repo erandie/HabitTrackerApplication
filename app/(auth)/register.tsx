@@ -10,12 +10,15 @@ import {
 import React, { useState } from "react"
 import { useRouter } from "expo-router"
 import { register } from "@/services/authService"
+import { Picker } from "@react-native-picker/picker"
 
 const Register = () => {
   const router = useRouter()
   const [email, setEmail] = useState<string>("")
   const [password, setPasword] = useState<string>("")
   const [isLodingReg, setIsLoadingReg] = useState<boolean>(false)
+  const [nickname, setNickname] = useState('');
+  const [selectedSuggestion, setSelectedSuggestion] = useState('');
 
   const handleRegister = async () => {
     // if(!email){
@@ -51,6 +54,34 @@ const Register = () => {
         value={email}
         onChangeText={setEmail}
       />
+
+    <View className="mb-4">
+      <Text className="text-gray-700 mb-1">Cute Nickname (e.g., Adventurer, Dreamer)</Text>
+        <View className="flex-row items-center mb-2">
+          <TextInput
+            className="bg-white rounded-lg p-2 text-gray-800 flex-1 mr-2"
+            placeholder="Enter your nickname"
+            value={nickname}
+            onChangeText={setNickname}
+          />
+          <Picker
+            selectedValue={selectedSuggestion}
+            onValueChange={(value) => {
+              setNickname(value);
+              setSelectedSuggestion(value);
+            }}
+            style={{ width: 120, height: 40, backgroundColor: '#fff', borderRadius: 8 }}
+            dropdownIconColor="#4a6bdf"
+          >
+            <Picker.Item label="Select a suggestion" value="" />
+            <Picker.Item label="Adventurer" value="Adventurer" />
+            <Picker.Item label="Dreamer" value="Dreamer" />
+            <Picker.Item label="Hero" value="Hero" />
+            <Picker.Item label="Zen" value="Zen" />
+          </Picker>
+        </View>
+      </View>
+
       <TextInput
         placeholder="Password"
         className="bg-surface border border-gray-300 rounded px-4 py-3 mb-4 text-gray-900"
