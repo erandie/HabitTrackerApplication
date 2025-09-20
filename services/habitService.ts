@@ -62,15 +62,27 @@ export const updateHabit = async (id: string, updates: Partial<Omit<Habit, 'id' 
   }
 };
 
+// In habitService.ts (deleteHabit function)
 export const deleteHabit = async (id: string) => {
   try {
     const user = auth.currentUser;
-    if (!user) throw new Error('User not logged in');
+    console.log('deleteHabit: Current user UID:', user?.uid); // Debug: Check auth
+    if (!user) {
+      const error = new Error('User not logged in');
+      console.error('deleteHabit error:', error.message);
+      throw error;
+    }
 
     const habitRef = doc(db, 'habits', id);
+    console.log('deleteHabit: Deleting ref:', habitRef.path); // Debug: Full path
     await deleteDoc(habitRef);
-  } catch (error) {
-    console.error('Error deleting habit:', error);
+    console.log('deleteHabit: Success for ID:', id);
+  } catch (error: any) {
+    console.error('deleteHabit error details:', {
+      message: error.message,
+      code: error.code, // Firestore error code (e.g., 'permission-denied')
+      stack: error.stack,
+    });
     throw error;
   }
 };

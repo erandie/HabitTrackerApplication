@@ -40,6 +40,7 @@ const HabitsScreen = () => {
       setLoading(false);
     }, (error) => {
       Alert.alert('Error', 'Failed to load habits: ' + error.message);
+      console.error('Snapshot error:', error);
       setLoading(false);
     });
 
@@ -52,14 +53,16 @@ const HabitsScreen = () => {
 
   const toggleHabitCompletion = async (id: string, completed: boolean) => {
     try {
+      console.log('Toggling habit:', id, 'to completed:', completed); // Debug
       await updateHabit(id, { completed });
-      // No need to update state; onSnapshot handles it
     } catch (error) {
       Alert.alert('Error', 'Failed to update habit completion');
+      console.error('Toggle error:', error);
     }
   };
 
   const handleDelete = async (id: string) => {
+    console.log('handleDelete called with ID:', id); // Debug: Confirm handler fires
     Alert.alert(
       'Delete Habit',
       'Are you sure you want to delete this habit?',
@@ -69,11 +72,14 @@ const HabitsScreen = () => {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
+            console.log('Delete confirmed, calling deleteHabit for ID:', id); // Debug: Confirm onPress
             try {
               await deleteHabit(id);
-              // No need to update state; onSnapshot handles it
-            } catch (error) {
-              Alert.alert('Error', 'Failed to delete habit');
+              console.log('deleteHabit returned successfully for ID:', id); // Debug: Success
+              Alert.alert('Success', 'Habit deleted successfully');
+            } catch (error: any) {
+              console.error('Delete failed in handleDelete:', error.message || error);
+              Alert.alert('Error', 'Failed to delete habit: ' + (error.message || 'Unknown error'));
             }
           },
         },
@@ -82,7 +88,11 @@ const HabitsScreen = () => {
   };
 
   const handleEdit = (habit: Habit) => {
-    router.push({ pathname: '/(dashboard)/EditHabit', params: { habit: JSON.stringify(habit) } });
+    console.log('Navigating to EditHabit with habit ID:', habit.id); // Debug
+    router.push({
+      pathname: '/(dashboard)/EditHabit',
+      params: { habit: JSON.stringify(habit) },
+    });
   };
 
   const renderHabit = ({ item }: { item: Habit }) => (

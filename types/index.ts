@@ -9,6 +9,7 @@ export interface Habit {
 }
 
 export interface JournalEntry {
+  date: any;
   id: string;
   title: string;
   content: string;

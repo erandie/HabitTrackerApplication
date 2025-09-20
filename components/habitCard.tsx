@@ -6,7 +6,7 @@ interface HabitCardProps {
   habit: Habit;
   onToggle: (id: string, completed: boolean) => void;
   onDelete: (id: string) => void;
-  onEdit: (habit: Habit) => void; // New prop for edit
+  onEdit: (habit: Habit) => void;
 }
 
 const HabitCard: React.FC<HabitCardProps> = ({ habit, onToggle, onDelete, onEdit }) => {
@@ -18,7 +18,12 @@ const HabitCard: React.FC<HabitCardProps> = ({ habit, onToggle, onDelete, onEdit
           <TouchableOpacity onPress={() => onEdit(habit)}>
             <Text style={styles.edit}>Edit</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => onDelete(habit.id)}>
+          <TouchableOpacity
+            onPress={() => {
+              console.log('Delete button pressed for habit ID:', habit.id); // Debug log
+              onDelete(habit.id);
+            }}
+          >
             <Text style={styles.delete}>Delete</Text>
           </TouchableOpacity>
         </View>
@@ -53,7 +58,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   title: { fontSize: 18, fontWeight: 'bold' },
   actions: { flexDirection: 'row', gap: 12 },
-  edit: { color: '#4a6bdf', fontSize: 14 }, // Blue for edit
+  edit: { color: '#4a6bdf', fontSize: 14 },
   delete: { color: 'red', fontSize: 14 },
   description: { marginVertical: 8 },
   frequency: { color: '#666', marginBottom: 12 },
