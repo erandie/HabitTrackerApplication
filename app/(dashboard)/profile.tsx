@@ -1,149 +1,97 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+// app/(dashboard)/profile.tsx
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigation } from '@react-navigation/native';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../../firebase';
 
 export default function ProfileScreen() {
   const { user } = useAuth();
-  const navigation = useNavigation();
+  const router = useRouter();
+  const [habitsCount, setHabitsCount] = useState(0);
+  const [journalCount, setJournalCount] = useState(0);
+  const [streak, setStreak] = useState(0); // Placeholder for streak logic
+
+  useEffect(() => {
+    const fetchCounts = async () => {
+      if (!user) return;
+
+      // Fetch habits count
+      const habitsQuery = query(collection(db, 'habits'), where('userId', '==', user.uid));
+      const habitsSnapshot = await getDocs(habitsQuery);
+      setHabitsCount(habitsSnapshot.size);
+
+      // Fetch journal entries count
+      const journalQuery = query(collection(db, 'journals'), where('userId', '==', user.uid));
+      const journalSnapshot = await getDocs(journalQuery);
+      setJournalCount(journalSnapshot.size);
+
+      // Placeholder for streak (implement logic based on completed habits)
+      setStreak(7); // Replace with actual streak calculation
+    };
+
+    fetchCounts();
+  }, [user]);
 
   const handleLogout = () => {
     Alert.alert(
-      "Logout",
-      "Are you sure you want to logout?",
+      'Logout',
+      'Are you sure you want to logout?',
       [
-        { text: "Cancel", style: "cancel" },
-        { text: "Logout", onPress: () => signOut(auth) }
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Logout', onPress: () => signOut(auth) },
       ]
     );
   };
 
+  const handleEditProfile = () => {
+    router.push('/(dashboard)/EditProfile'); // Navigate to edit screen (to be created)
+  };
+
   return (
-    <View style={styles.container}>
-      <View style={styles.profileHeader}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{user?.email?.charAt(0).toUpperCase()}</Text>
+    <View className="flex-1 p-5 bg-gray-50">
+      <View className="items-center mb-7">
+        <View className="w-20 h-20 rounded-full bg-blue-600 flex items-center justify-center mb-4">
+          <Text className="text-3xl text-white font-bold">
+            {user?.email?.charAt(0).toUpperCase() || 'U'}
+          </Text>
         </View>
-        <Text style={styles.name}>User Name</Text>
-        <Text style={styles.email}>{user?.email}</Text>
+        <Text className="text-xl font-bold text-gray-800 mb-1">User Name</Text>
+        <Text className="text-base text-gray-600">{user?.email || 'No email'}</Text>
       </View>
-      
-      <View style={styles.statsContainer}>
-        <View style={styles.statBox}>
-          <Text style={styles.statNumber}>5</Text>
-          <Text style={styles.statLabel}>Habits</Text>
+
+      <View className="flex-row justify-between mb-7">
+        <View className="items-center bg-white p-4 rounded-lg shadow-md shadow-black/10 w-[30%]">
+          <Text className="text-lg font-bold text-blue-600 mb-1">{habitsCount}</Text>
+          <Text className="text-xs text-gray-600 text-center">Habits</Text>
         </View>
-        <View style={styles.statBox}>
-          <Text style={styles.statNumber}>12</Text>
-          <Text style={styles.statLabel}>Journal Entries</Text>
+        <View className="items-center bg-white p-4 rounded-lg shadow-md shadow-black/10 w-[30%]">
+          <Text className="text-lg font-bold text-blue-600 mb-1">{journalCount}</Text>
+          <Text className="text-xs text-gray-600 text-center">Journal Entries</Text>
         </View>
-        <View style={styles.statBox}>
-          <Text style={styles.statNumber}>7</Text>
-          <Text style={styles.statLabel}>Day Streak</Text>
+        <View className="items-center bg-white p-4 rounded-lg shadow-md shadow-black/10 w-[30%]">
+          <Text className="text-lg font-bold text-blue-600 mb-1">{streak}</Text>
+          <Text className="text-xs text-gray-600 text-center">Day Streak</Text>
         </View>
       </View>
-      
-      <View style={styles.menuContainer}>
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuText}>Edit Profile</Text>
+
+      <View className="bg-white rounded-lg shadow-md shadow-black/10">
+        <TouchableOpacity className="p-4 border-b border-gray-200" onPress={handleEditProfile}>
+          <Text className="text-base text-gray-800">Edit Profile</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuText}>Settings</Text>
+        <TouchableOpacity className="p-4 border-b border-gray-200">
+          <Text className="text-base text-gray-800">Settings</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuText}>Help & Support</Text>
+        <TouchableOpacity className="p-4 border-b border-gray-200">
+          <Text className="text-base text-gray-800">Help & Support</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
-          <Text style={[styles.menuText, styles.logoutText]}>Logout</Text>
+        <TouchableOpacity className="p-4" onPress={handleLogout}>
+          <Text className="text-base text-red-600">Logout</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    padding: 20,
-    backgroundColor: '#f8f9fa'
-  },
-  profileHeader: {
-    alignItems: 'center',
-    marginBottom: 30
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#4a6bdf',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16
-  },
-  avatarText: {
-    fontSize: 32,
-    color: '#fff',
-    fontWeight: 'bold'
-  },
-  name: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 4,
-    color: '#333'
-  },
-  email: {
-    fontSize: 16,
-    color: '#666'
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 30
-  },
-  statBox: {
-    width: '30%',
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 10,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2
-  },
-  statNumber: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#4a6bdf',
-    marginBottom: 4
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#666',
-    textAlign: 'center'
-  },
-  menuContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2
-  },
-  menuItem: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0'
-  },
-  menuText: {
-    fontSize: 16,
-    color: '#333'
-  },
-  logoutText: {
-    color: 'red'
-  }
-});
