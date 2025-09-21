@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Text, TouchableOpacity, Alert, ScrollView, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { signOut } from 'firebase/auth';
@@ -14,52 +14,65 @@ export default function HomeScreen() {
   const [journalFrequencyData, setJournalFrequencyData] = useState<number[]>(new Array(7).fill(0));
   const [streak, setStreak] = useState(0);
   const [theme, setTheme] = useState<'light' | 'dark' | 'pink'>('light');
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-  const calculateAnalytics = async () => {
+  // Fetch analytics data
+  const calculateAnalytics = useCallback(async () => {
     if (!user) return;
 
-    // Habit Completion Rate
-    const habitsQuery = query(collection(db, 'habits'), where('userId', '==', user.uid));
-    const habitsSnapshot = await getDocs(habitsQuery);
-    const totalHabits = habitsSnapshot.size;
-    const completedHabits = habitsSnapshot.docs.filter(doc => doc.data().completed).length;
-    setHabitCompletionRate(totalHabits > 0 ? (completedHabits / totalHabits) * 100 : 0);
+    setRefreshing(true);
+    try {
+      // Habit Completion Rate
+      const habitsQuery = query(collection(db, 'habits'), where('userId', '==', user.uid));
+      const habitsSnapshot = await getDocs(habitsQuery);
+      const totalHabits = habitsSnapshot.size;
+      const completedHabits = habitsSnapshot.docs.filter(doc => doc.data().completed).length;
+      setHabitCompletionRate(totalHabits > 0 ? (completedHabits / totalHabits) * 100 : 0);
 
-    // Journal Frequency (daily data for the week)
-    const journalQuery = query(collection(db, 'journals'), where('userId', '==', user.uid));
-    const journalSnapshot = await getDocs(journalQuery);
-    const entries = journalSnapshot.docs.map(doc => doc.data().createdAt?.toDate() || new Date());
-    const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-    const dailyData = new Array(7).fill(0);
-    entries.forEach(entry => {
-      const dayIndex = Math.floor((oneWeekAgo.getTime() - entry.getTime()) / (1000 * 60 * 60 * 24)) % 7;
-      if (dayIndex >= 0) dailyData[dayIndex]++;
-    });
-    setJournalFrequencyData(dailyData);
+      // Journal Frequency (daily data for the week)
+      const journalQuery = query(collection(db, 'journals'), where('userId', '==', user.uid));
+      const journalSnapshot = await getDocs(journalQuery);
+      const entries = journalSnapshot.docs.map(doc => doc.data().createdAt?.toDate() || new Date());
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+      const dailyData = new Array(7).fill(0);
+      entries.forEach(entry => {
+        const dayIndex = Math.floor((oneWeekAgo.getTime() - entry.getTime()) / (1000 * 60 * 60 * 24)) % 7;
+        if (dayIndex >= 0) dailyData[dayIndex]++;
+      });
+      setJournalFrequencyData(dailyData);
 
-    // Streak (simplified: consecutive days with completed habits)
-    const completedDates = habitsSnapshot.docs
-      .filter(doc => doc.data().completed)
-      .map(doc => doc.data().createdAt?.toDate() || new Date())
-      .sort((a, b) => b - a);
-    let currentStreak = 0;
-    let currentDate = new Date();
-    for (let date of completedDates) {
-      const diffDays = Math.floor((currentDate.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-      if (diffDays <= currentStreak) {
-        currentStreak++;
-      } else {
-        break;
+      // Streak (simplified: consecutive days with completed habits)
+      const completedDates = habitsSnapshot.docs
+        .filter(doc => doc.data().completed)
+        .map(doc => doc.data().createdAt?.toDate() || new Date())
+        .sort((a, b) => b - a);
+      let currentStreak = 0;
+      let currentDate = new Date();
+      currentDate.setHours(0, 0, 0, 0); // Normalize to start of day
+      for (let date of completedDates) {
+        const habitDate = new Date(date);
+        habitDate.setHours(0, 0, 0, 0);
+        const diffDays = Math.floor((currentDate.getTime() - habitDate.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDays === currentStreak) {
+          currentStreak++;
+          currentDate = habitDate;
+        } else {
+          break;
+        }
       }
-      currentDate = date;
+      setStreak(currentStreak);
+    } catch (error: any) {
+      Alert.alert('Error', 'Failed to load analytics: ' + error.message);
+      console.error('Fetch error:', error);
+    } finally {
+      setRefreshing(false);
     }
-    setStreak(currentStreak);
-  };
-
-    calculateAnalytics();
   }, [user]);
+
+  useEffect(() => {
+    calculateAnalytics();
+  }, [calculateAnalytics]);
 
   const handleLogout = async () => {
     Alert.alert(
@@ -73,35 +86,58 @@ export default function HomeScreen() {
   };
 
   const getGreeting = () => {
-  const hour = new Date().getHours();
+    const hour = new Date().getHours();
     if (hour < 12) return 'Good Morning,';
     if (hour < 17) return 'Good Afternoon,';
     return 'Good Evening,';
   };
-  
-    return (
-      <View className="flex-1 p-5" style={{ backgroundColor: theme === 'dark' ? '#1a202c' : theme === 'pink' ? '#f5e6e8' : '#f5f6fa', color: theme === 'dark' ? '#e2e8f0' : theme === 'pink' ? '#4a2c2a' : '#2d3748' }}>
-        <Text className="text-3xl font-bold text-gray-800 mb-2 text-center">
+
+  return (
+    <ScrollView
+      className="flex-1 p-5"
+      style={{ backgroundColor: theme === 'dark' ? '#1a202c' : theme === 'pink' ? '#f5e6e8' : '#f5f6fa' }}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={calculateAnalytics}
+          colors={['#4a6bdf']}
+          tintColor={theme === 'dark' ? '#e2e8f0' : '#4a6bdf'}
+        />
+      }
+    >
+      <View className="flex-1">
+        <Text
+          className="text-3xl font-bold mb-2 text-center"
+          style={{ color: theme === 'dark' ? '#e2e8f0' : theme === 'pink' ? '#4a2c2a' : '#2d3748' }}
+        >
           {getGreeting()} {user?.displayName || user?.email || 'Guest'}!
         </Text>
-        <Text className="text-base text-gray-600 mb-6 text-center">Track your habits and journal your thoughts</Text>
+        <Text
+          className="text-base mb-6 text-center"
+          style={{ color: theme === 'dark' ? '#a0aec0' : '#718096' }}
+        >
+          Track your habits and journal your thoughts
+        </Text>
         {/* Theme Toggle */}
         <View className="flex-row justify-center mb-4">
           <TouchableOpacity
             className={`px-4 py-2 rounded-md mr-2 ${theme === 'light' ? 'bg-blue-600' : 'bg-gray-300'}`}
             onPress={() => setTheme('light')}
+            accessibilityLabel="Switch to light theme"
           >
             <Text className={`${theme === 'light' ? 'text-white' : 'text-gray-600'} font-medium`}>Light</Text>
           </TouchableOpacity>
           <TouchableOpacity
             className={`px-4 py-2 rounded-md mr-2 ${theme === 'dark' ? 'bg-blue-600' : 'bg-gray-300'}`}
             onPress={() => setTheme('dark')}
+            accessibilityLabel="Switch to dark theme"
           >
             <Text className={`${theme === 'dark' ? 'text-white' : 'text-gray-600'} font-medium`}>Dark</Text>
           </TouchableOpacity>
           <TouchableOpacity
             className={`px-4 py-2 rounded-md ${theme === 'pink' ? 'bg-blue-600' : 'bg-gray-300'}`}
             onPress={() => setTheme('pink')}
+            accessibilityLabel="Switch to pink theme"
           >
             <Text className={`${theme === 'pink' ? 'text-white' : 'text-gray-600'} font-medium`}>Pink</Text>
           </TouchableOpacity>
@@ -109,64 +145,78 @@ export default function HomeScreen() {
 
         {/* Analytics Dashboard with Charts */}
         <View className="mb-6">
-          <Text className="text-xl font-bold text-gray-800 mb-4">Your Progress</Text>
-          <ScrollView className="h-full">
-            {/* Habit Completion Bar Chart */}
-            <View className="mb-4">
-              <Text className="text-lg text-gray-600 mb-2">Habit Completion Rate</Text>
-              <BarChart
-                data={{
-                  labels: ['Completed', 'Incomplete'],
-                  datasets: [{ data: [habitCompletionRate, 100 - habitCompletionRate] }],
-                }}
-                width={300}
-                height={200}
-                yAxisLabel="%"
-                yAxisSuffix="%"
-                chartConfig={{
-                  backgroundColor: '#f5f6fa',
-                  backgroundGradientFrom: '#f5f6fa',
-                  backgroundGradientTo: '#f5f6fa',
-                  decimalPlaces: 0,
-                  color: (opacity = 1) => `rgba(74, 107, 223, ${opacity})`,
-                  labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-                }}
-                style={{ marginVertical: 8 }}
-              />
-            </View>
+          <Text
+            className="text-xl font-bold mb-4"
+            style={{ color: theme === 'dark' ? '#e2e8f0' : theme === 'pink' ? '#4a2c2a' : '#2d3748' }}
+          >
+            Your Progress
+          </Text>
+          {/* Habit Completion Bar Chart */}
+          <View className="mb-4">
+            <Text
+              className="text-lg mb-2"
+              style={{ color: theme === 'dark' ? '#a0aec0' : '#718096' }}
+            >
+              Habit Completion Rate
+            </Text>
+            <BarChart
+              data={{
+                labels: ['Completed', 'Incomplete'],
+                datasets: [{ data: [habitCompletionRate, 100 - habitCompletionRate] }],
+              }}
+              width={300}
+              height={200}
+              yAxisLabel="%"
+              yAxisSuffix="%"
+              chartConfig={{
+                backgroundColor: theme === 'dark' ? '#2d3748' : theme === 'pink' ? '#f5e6e8' : '#f5f6fa',
+                backgroundGradientFrom: theme === 'dark' ? '#2d3748' : theme === 'pink' ? '#f5e6e8' : '#f5f6fa',
+                backgroundGradientTo: theme === 'dark' ? '#2d3748' : theme === 'pink' ? '#f5e6e8' : '#f5f6fa',
+                decimalPlaces: 0,
+                color: (opacity = 1) => `rgba(74, 107, 223, ${opacity})`,
+                labelColor: (opacity = 1) => theme === 'dark' ? `rgba(226, 232, 240, ${opacity})` : `rgba(0, 0, 0, ${opacity})`,
+              }}
+              style={{ marginVertical: 8 }}
+            />
+          </View>
 
-            {/* Journal Frequency Line Chart */}
-            <View>
-              <Text className="text-lg text-gray-600 mb-2">Journal Entries (Weekly)</Text>
-              <LineChart
-                data={{
-                  labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                  datasets: [{ data: journalFrequencyData }],
-                }}
-                width={300}
-                height={200}
-                yAxisLabel=""
-                chartConfig={{
-                  backgroundColor: '#f5f6fa',
-                  backgroundGradientFrom: '#f5f6fa',
-                  backgroundGradientTo: '#f5f6fa',
-                  decimalPlaces: 0,
-                  color: (opacity = 1) => `rgba(212, 165, 165, ${opacity})`,
-                  labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-                }}
-                style={{ marginVertical: 8 }}
-              />
-            </View>
-            
-          </ScrollView>
+          {/* Journal Frequency Line Chart */}
+          <View>
+            <Text
+              className="text-lg mb-2"
+              style={{ color: theme === 'dark' ? '#a0aec0' : '#718096' }}
+            >
+              Journal Entries (Weekly)
+            </Text>
+            <LineChart
+              data={{
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{ data: journalFrequencyData }],
+              }}
+              width={300}
+              height={200}
+              yAxisLabel=""
+              chartConfig={{
+                backgroundColor: theme === 'dark' ? '#2d3748' : theme === 'pink' ? '#f5e6e8' : '#f5f6fa',
+                backgroundGradientFrom: theme === 'dark' ? '#2d3748' : theme === 'pink' ? '#f5e6e8' : '#f5f6fa',
+                backgroundGradientTo: theme === 'dark' ? '#2d3748' : theme === 'pink' ? '#f5e6e8' : '#f5f6fa',
+                decimalPlaces: 0,
+                color: (opacity = 1) => `rgba(212, 165, 165, ${opacity})`,
+                labelColor: (opacity = 1) => theme === 'dark' ? `rgba(226, 232, 240, ${opacity})` : `rgba(0, 0, 0, ${opacity})`,
+              }}
+              style={{ marginVertical: 8 }}
+            />
+          </View>
         </View>
 
         <TouchableOpacity
           className="bg-red-600 rounded-md p-3 mt-auto"
           onPress={handleLogout}
+          accessibilityLabel="Logout"
         >
           <Text className="text-white text-center text-base font-medium">Logout</Text>
         </TouchableOpacity>
       </View>
-    );
+    </ScrollView>
+  );
 }
