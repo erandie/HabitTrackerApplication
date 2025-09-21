@@ -1,12 +1,15 @@
 // app/(dashboard)/profile.tsx
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
+import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function ProfileScreen() {
   const { user } = useAuth();
@@ -14,6 +17,48 @@ export default function ProfileScreen() {
   const [habitsCount, setHabitsCount] = useState(0);
   const [journalCount, setJournalCount] = useState(0);
   const [streak, setStreak] = useState(0); // Placeholder for streak logic
+  const [imageUri, setImageUri] = useState<string | null>(null); // Store image URI or base64
+
+   // Load saved image on mount
+    React.useEffect(() => {
+      const loadImage = async () => {
+        const savedImage = await AsyncStorage.getItem(`profileImage_${user?.uid}`);
+        if (savedImage) setImageUri(savedImage);
+      };
+      loadImage();
+    }, [user?.uid]);
+
+    const pickImage = async () => {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'We need camera roll permissions to upload a profile picture.');
+        return;
+      }
+
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1], // Square crop
+        quality: 0.5,   // Reduce quality for smaller size
+      });
+
+      if (!result.canceled && result.assets && result.assets[0].uri) {
+        const manipResult = await ImageManipulator.manipulateAsync(
+          result.assets[0].uri,
+          [{ resize: { width: 200 } }], // Resize to 200px width
+          { compress: 0.7, format: ImageManipulator.SaveFormat.PNG } // Compress to ~50-100KB
+        );
+        const base64 = await ImageManipulator.manipulateAsync(manipResult.uri, [], {
+          base64: true,
+        });
+        if (base64.base64) {
+          await AsyncStorage.setItem(`profileImage_${user?.uid}`, base64.base64);
+          setImageUri(base64.base64);
+          Alert.alert('Success', 'Profile picture updated!');
+        }
+      }
+    };
+
 
     useEffect(() => {
     const fetchCounts = async () => {
@@ -70,14 +115,19 @@ export default function ProfileScreen() {
     router.push('/(dashboard)/EditProfile'); // Navigate to edit screen (to be created)
   };
 
-  return (
+ return (
     <View className="flex-1 p-5 bg-gray-50">
       <View className="items-center mb-7">
-        <View className="w-20 h-20 rounded-full bg-blue-600 flex items-center justify-center mb-4">
-          <Text className="text-3xl text-white font-bold">
-            {user?.email?.charAt(0).toUpperCase() || 'U'}
-          </Text>
-        </View>
+        <TouchableOpacity className="mb-3" onPress={() => router.push('/(dashboard)/EditProfile')}>
+          <Image
+            className="w-24 h-24 rounded-full bg-gray-200"
+            source={imageUri ? { uri: `data:image/png;base64,${imageUri}` } : require('../../assets/images/habitTrackerAvatar.jpeg')} // Fixed typo
+          />
+          <Text className="text-sm text-blue-600">Pick Profile Picture</Text>
+        </TouchableOpacity>
+        <Text className="text-3xl font-bold text-gray-800">
+          {user?.email?.charAt(0).toUpperCase() || 'U'}
+        </Text>
         <Text className="text-xl font-bold text-gray-800 mb-1">User Name: {user?.displayName || 'No nickname'}</Text>
         <Text className="text-base text-gray-600">{user?.email || 'No email'}</Text>
       </View>
