@@ -174,9 +174,23 @@ export default function ProfileScreen() {
           <TouchableOpacity className="p-4 border-b border-gray-200" accessibilityLabel="Help and support">
             <Text className="text-base text-gray-800">Help & Support</Text>
           </TouchableOpacity> */}
+
+          <TouchableOpacity className="p-4" onPress={handleLogout} accessibilityLabel="Setting">
+            <Text className="text-base text-black-600">Setting</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            className="p-4"
+            accessibilityLabel="Go to Login"
+            onPress={() => router.push('/login')}
+          >
+            <Text className="text-base text-black-600">Login</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity className="p-4" onPress={handleLogout} accessibilityLabel="Logout">
             <Text className="text-base text-red-600">Logout</Text>
           </TouchableOpacity>
+          
         </View>
       </View>
     </ScrollView>

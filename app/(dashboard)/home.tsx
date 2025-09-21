@@ -6,6 +6,7 @@ import { signOut } from 'firebase/auth';
 import { auth, db } from '../../firebase';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { BarChart, LineChart } from 'react-native-chart-kit';
+import { useTheme } from '@/app/(dashboard)/_layout';
 
 export default function HomeScreen() {
   const { user } = useAuth();
@@ -15,6 +16,7 @@ export default function HomeScreen() {
   const [streak, setStreak] = useState(0);
   const [theme, setTheme] = useState<'light' | 'dark' | 'pink'>('light');
   const [refreshing, setRefreshing] = useState(false);
+  
 
   // Fetch analytics data
   const calculateAnalytics = useCallback(async () => {
@@ -119,29 +121,7 @@ export default function HomeScreen() {
           Track your habits and journal your thoughts
         </Text>
         {/* Theme Toggle */}
-        <View className="flex-row justify-center mb-4">
-          <TouchableOpacity
-            className={`px-4 py-2 rounded-md mr-2 ${theme === 'light' ? 'bg-blue-600' : 'bg-gray-300'}`}
-            onPress={() => setTheme('light')}
-            accessibilityLabel="Switch to light theme"
-          >
-            <Text className={`${theme === 'light' ? 'text-white' : 'text-gray-600'} font-medium`}>Light</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className={`px-4 py-2 rounded-md mr-2 ${theme === 'dark' ? 'bg-blue-600' : 'bg-gray-300'}`}
-            onPress={() => setTheme('dark')}
-            accessibilityLabel="Switch to dark theme"
-          >
-            <Text className={`${theme === 'dark' ? 'text-white' : 'text-gray-600'} font-medium`}>Dark</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className={`px-4 py-2 rounded-md ${theme === 'pink' ? 'bg-blue-600' : 'bg-gray-300'}`}
-            onPress={() => setTheme('pink')}
-            accessibilityLabel="Switch to pink theme"
-          >
-            <Text className={`${theme === 'pink' ? 'text-white' : 'text-gray-600'} font-medium`}>Pink</Text>
-          </TouchableOpacity>
-        </View>
+      
 
         {/* Analytics Dashboard with Charts */}
         <View className="mb-6">

@@ -13,7 +13,7 @@ export default function Index() {
           borderRadius: 8,
           marginBottom: 12,
         }}
-        onPress={() => router.push("/(auth)/login")}
+        onPress={() => router.push("/(dashboard)/home")}
       >
         <Text style={{ color: "#fff", fontSize: 16 }}>Get Started</Text>
       </TouchableOpacity>
