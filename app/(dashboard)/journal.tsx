@@ -1,16 +1,15 @@
-// app/(dashboard)/journal.tsx
-import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert, Platform, TextInput } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, FlatList, TouchableOpacity, Alert, Platform, TextInput, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { JournalEntry } from '../../types';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { addJournal, updateJournal, deleteJournal } from '../../services/journalService';
 import JournalCard from '../../components/journalCard';
 import * as Notifications from 'expo-notifications';
 import { Picker } from '@react-native-picker/picker';
-import { useTheme } from '../_layout'; // Correct import for our custom theme
+import { useTheme } from '../_layout';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -29,15 +28,48 @@ export default function JournalScreen() {
   const [filteredEntries, setFilteredEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [moodFilter, setMoodFilter] = useState('all');  
+  const [moodFilter, setMoodFilter] = useState('all');
+  const [refreshing, setRefreshing] = useState(false);
   const { theme } = useTheme() || { theme: 'light' as const };
 
- useEffect(() => {
+  // Fetch journal entries
+  const fetchEntries = useCallback(async () => {
     if (!user) {
       Alert.alert('Error', 'You must be logged in to view journal');
       setLoading(false);
       return;
     }
+
+    setRefreshing(true);
+    try {
+      const q = query(collection(db, 'journals'), where('userId', '==', user.uid));
+      const querySnapshot = await getDocs(q);
+      const entriesData: JournalEntry[] = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        entriesData.push({
+          id: doc.id,
+          title: data.title || 'Untitled',
+          content: data.content || '',
+          mood: data.mood || 'neutral',
+          userId: data.userId || user.uid,
+          createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
+        } as JournalEntry);
+      });
+      setEntries(entriesData);
+      applyFilters(entriesData);
+    } catch (error: any) {
+      Alert.alert('Error', 'Failed to load journal entries: ' + error.message);
+      console.error('Fetch error:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [user]);
+
+  // Real-time listener for journal entries
+  useEffect(() => {
+    if (!user) return;
 
     const q = query(collection(db, 'journals'), where('userId', '==', user.uid));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -65,9 +97,12 @@ export default function JournalScreen() {
     if (Platform.OS !== 'web') {
       scheduleDailyNotification();
     }
-  }, [user, theme]); // Keep theme in dependency array for consistency
 
-  const applyFilters = (data: JournalEntry[]) => {
+    return () => unsubscribe();
+  }, [user, theme]);
+
+  // Apply search and mood filters
+  const applyFilters = useCallback((data: JournalEntry[]) => {
     let filtered = [...data];
     if (searchQuery) {
       filtered = filtered.filter(entry =>
@@ -79,8 +114,9 @@ export default function JournalScreen() {
       filtered = filtered.filter(entry => entry.mood === moodFilter);
     }
     setFilteredEntries(filtered);
-  };
+  }, [searchQuery, moodFilter]);
 
+  // Schedule daily notification
   const scheduleDailyNotification = async () => {
     await Notifications.scheduleNotificationAsync({
       content: {
@@ -92,6 +128,7 @@ export default function JournalScreen() {
     });
   };
 
+  // Add new journal entry
   const addNewEntry = async () => {
     router.push('/(dashboard)/AddJournal');
     if (Platform.OS !== 'web') {
@@ -106,6 +143,7 @@ export default function JournalScreen() {
     }
   };
 
+  // Delete journal entry
   const handleDelete = async (id: string) => {
     Alert.alert(
       'Delete Entry',
@@ -129,6 +167,7 @@ export default function JournalScreen() {
     );
   };
 
+  // Edit journal entry
   const handleEdit = (entry: JournalEntry) => {
     router.push({
       pathname: '/(dashboard)/EditJournal',
@@ -136,6 +175,7 @@ export default function JournalScreen() {
     });
   };
 
+  // Render journal entry card
   const renderEntry = ({ item }: { item: JournalEntry }) => (
     <JournalCard
       entry={item}
@@ -145,17 +185,21 @@ export default function JournalScreen() {
   );
 
   return (
-    <View className="flex-1 p-5" style={{ backgroundColor: theme === 'dark' ? '#1a202c' : theme === 'pink' ? '#f5e6e8' : '#f5f6fa', color: theme === 'dark' ? '#e2e8f0' : theme === 'pink' ? '#4a2c2a' : '#2d3748' }}>
-      <Text className="text-2xl font-bold text-gray-800 mb-4 text-center">My Journal</Text>
+    <View className="flex-1 p-5" style={{ backgroundColor: theme === 'dark' ? '#1a202c' : theme === 'pink' ? '#f5e6e8' : '#f5f6fa' }}>
+      <Text className="text-2xl font-bold mb-4 text-center" style={{ color: theme === 'dark' ? '#e2e8f0' : theme === 'pink' ? '#4a2c2a' : '#2d3748' }}>
+        My Journal
+      </Text>
       <View className="mb-4">
         <TextInput
           className="bg-white rounded-lg p-2 text-gray-800 mb-2"
           placeholder="Search by title or content..."
+          placeholderTextColor="#a0aec0"
           value={searchQuery}
           onChangeText={text => {
             setSearchQuery(text);
             applyFilters(entries);
           }}
+          style={{ color: theme === 'dark' ? '#e2e8f0' : '#2d3748' }}
         />
         <View className="bg-white rounded-lg p-1">
           <Picker
@@ -164,7 +208,7 @@ export default function JournalScreen() {
               setMoodFilter(value);
               applyFilters(entries);
             }}
-            className="text-gray-800"
+            style={{ color: theme === 'dark' ? '#e2e8f0' : '#2d3748' }}
           >
             <Picker.Item label="All Moods" value="all" />
             <Picker.Item label="Happy 😊" value="happy" />
@@ -174,18 +218,34 @@ export default function JournalScreen() {
         </View>
       </View>
       {loading ? (
-        <Text className="text-base text-gray-500 text-center mt-5">Loading entries...</Text>
+        <Text className="text-base text-gray-500 text-center mt-5" style={{ color: theme === 'dark' ? '#a0aec0' : '#718096' }}>
+          Loading entries...
+        </Text>
       ) : filteredEntries.length === 0 ? (
-        <Text className="text-base text-gray-500 text-center mt-5">No entries match your filter. Add one!</Text>
+        <Text className="text-base text-gray-500 text-center mt-5" style={{ color: theme === 'dark' ? '#a0aec0' : '#718096' }}>
+          No entries match your filter. Add one!
+        </Text>
       ) : (
         <FlatList
           data={filteredEntries}
           renderItem={renderEntry}
           keyExtractor={(item) => item.id}
-          contentContainerClassName="pb-20"
+          contentContainerStyle={{ paddingBottom: 80 }}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={fetchEntries}
+              colors={['#4a6bdf']}
+              tintColor={theme === 'dark' ? '#e2e8f0' : '#4a6bdf'}
+            />
+          }
         />
       )}
-      <TouchableOpacity className="absolute bottom-6 right-6 bg-blue-600 rounded-full p-3.5 shadow-md elevation-3" onPress={addNewEntry}>
+      <TouchableOpacity
+        className="absolute bottom-6 right-6 bg-blue-600 rounded-full p-3.5 shadow-md elevation-3"
+        onPress={addNewEntry}
+        accessibilityLabel="Add new journal entry"
+      >
         <Text className="text-white font-bold text-lg">+ Add Entry</Text>
       </TouchableOpacity>
     </View>
