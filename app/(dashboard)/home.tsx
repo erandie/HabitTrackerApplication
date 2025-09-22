@@ -31,6 +31,20 @@ const COLORS = {
 };
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+// Add this helper function at the top of your home.tsx file, after imports but before your component
+const hexToRgb = (hex: string) => {
+  // Remove the # if it exists
+  hex = hex.replace('#', '');
+  
+  // Parse the hex values
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  
+  return `${r}, ${g}, ${b}`;
+};
+
+
 export default function HomeScreen() {
   const { user } = useAuth();
   const router = useRouter();
@@ -42,6 +56,7 @@ export default function HomeScreen() {
   const { colors } = useTheme();
   const [notes, setNotes] = useState<{ id: string; title: string; note: string }[]>([]);
   const progress = useSharedValue(0)
+  
   
   // Fetch latest 3 notes
   const fetchNotes = useCallback(async () => {
@@ -181,45 +196,47 @@ export default function HomeScreen() {
 
 
 
-   return (
+  return (
     <ScrollView
-      style={styles.container} // Changed from className
+      style={[styles.container, { backgroundColor: colors.background }]} // Only change background color
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
           onRefresh={calculateAnalytics}
-          colors={[COLORS.primary]} // Use our new color
-          tintColor={COLORS.primary} // Use our new color
+          colors={[colors.accent]} // Use theme color but same as light theme
+          tintColor={colors.accent} // Use theme color but same as light theme
         />
       }
     >
       {/* Header Greeting */}
       <Animated.View entering={FadeInUp.duration(800)} style={styles.header}>
-        <Text style={styles.greeting}>
+        <Text style={[styles.greeting, { color: colors.textPrimary }]}> {/* Only text color */}
           {getGreeting()}{user?.displayName ? `, ${user.displayName}` : ''}! 🌟
         </Text>
-        <Text style={styles.subtitle}>Track your habits, journal your thoughts</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}> {/* Only text color */}
+          Track your habits, journal your thoughts
+        </Text>
       </Animated.View>
 
       {/* Streak Card */}
-      <Animated.View entering={FadeInRight.delay(200)} style={styles.statsCard}>
+      <Animated.View entering={FadeInRight.delay(200)} style={[styles.statsCard, { backgroundColor: colors.backgroundWhite }]}> {/* Only background color */}
         <View>
-          <Text style={styles.statsLabel}>Current Streak</Text>
-          <Text style={styles.statsValue}>{streak} days 🔥</Text>
+          <Text style={[styles.statsLabel, { color: colors.textSecondary }]}>Current Streak</Text> {/* Only text color */}
+          <Text style={[styles.statsValue, { color: colors.accent }]}>{streak} days 🔥</Text> {/* Only text color */}
         </View>
-        <View style={styles.streakIcon}>
+        <View style={styles.streakIcon}> {/* No changes to layout */}
           <Text>🔥</Text>
         </View>
       </Animated.View>
 
       {/* Recent Notes Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Recent Notes 📔</Text>
+      <View style={styles.section}> {/* No layout changes */}
+        <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Recent Notes 📔</Text> {/* Only text color */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.notesScrollContainer}>
           {(notes.length > 0 ? notes : sampleNotes).map((note, index) => (
-            <View key={note.id || index} style={styles.noteCard}>
-              <Text style={styles.noteTitle} numberOfLines={1}>{note.title}</Text>
-              <Text style={styles.notePreview} numberOfLines={3}>
+            <View key={note.id || index} style={[styles.noteCard, { backgroundColor: colors.backgroundWhite }]}> {/* Only background color */}
+              <Text style={[styles.noteTitle, { color: colors.textPrimary }]} numberOfLines={1}>{note.title}</Text> {/* Only text color */}
+              <Text style={[styles.notePreview, { color: colors.textSecondary }]} numberOfLines={3}> {/* Only text color */}
                 {getNotePreview(note.note)}
               </Text>
             </View>
@@ -228,12 +245,12 @@ export default function HomeScreen() {
       </View>
 
       {/* Analytics Dashboard */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Your Progress 📊</Text>
+      <View style={styles.section}> {/* No layout changes */}
+        <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Your Progress 📊</Text> {/* Only text color */}
 
         {/* Habit Completion */}
-        <View style={styles.chartContainer}>
-          <Text style={styles.chartTitle}>Habit Completion Rate</Text>
+        <View style={[styles.chartContainer, { backgroundColor: colors.backgroundWhite }]}> {/* Only background color */}
+          <Text style={[styles.chartTitle, { color: colors.textPrimary }]}>Habit Completion Rate</Text> {/* Only text color */}
           <BarChart
             data={{
               labels: ['Completed', 'Incomplete'],
@@ -244,20 +261,20 @@ export default function HomeScreen() {
             yAxisLabel=""
             yAxisSuffix="%"
             chartConfig={{
-              backgroundColor: COLORS.surface,
-              backgroundGradientFrom: COLORS.surface,
-              backgroundGradientTo: COLORS.surface,
+              backgroundColor: colors.backgroundWhite,
+              backgroundGradientFrom: colors.backgroundWhite,
+              backgroundGradientTo: colors.backgroundWhite,
               decimalPlaces: 0,
-              color: (opacity = 1) => `rgba(16, 185, 129, ${opacity})`, // Green
-              labelColor: (opacity = 1) => `rgba(30, 41, 59, ${opacity})`,
+              color: (opacity = 1) => `rgba(16, 185, 129, ${opacity})`, // Keep original green
+              labelColor: (opacity = 1) => `rgba(${hexToRgb(colors.textPrimary)}, ${opacity})`, // Only label color changes
             }}
             style={styles.chart}
           />
         </View>
 
         {/* Journal Frequency */}
-        <View style={styles.chartContainer}>
-          <Text style={styles.chartTitle}>Journal Frequency (This Week)</Text>
+        <View style={[styles.chartContainer, { backgroundColor: colors.backgroundWhite }]}> {/* Only background color */}
+          <Text style={[styles.chartTitle, { color: colors.textPrimary }]}>Journal Frequency (This Week)</Text> {/* Only text color */}
           <LineChart
             data={{
               labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
@@ -267,15 +284,15 @@ export default function HomeScreen() {
             height={200}
             yAxisLabel=""
             chartConfig={{
-              backgroundColor: COLORS.surface,
-              backgroundGradientFrom: COLORS.surface,
-              backgroundGradientTo: COLORS.surface,
+              backgroundColor: colors.backgroundWhite,
+              backgroundGradientFrom: colors.backgroundWhite,
+              backgroundGradientTo: colors.backgroundWhite,
               decimalPlaces: 0,
-              color: (opacity = 1) => `rgba(16, 185, 129, ${opacity})`, // Green
-              labelColor: (opacity = 1) => `rgba(30, 41, 59, ${opacity})`,
+              color: (opacity = 1) => `rgba(16, 185, 129, ${opacity})`, // Keep original green
+              labelColor: (opacity = 1) => `rgba(${hexToRgb(colors.textPrimary)}, ${opacity})`, // Only label color changes
               propsForDots: {
                 r: "5",
-                fill: COLORS.primary,
+                fill: COLORS.primary, // Keep original green
               },
             }}
             bezier
@@ -413,3 +430,5 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
 });
+
+

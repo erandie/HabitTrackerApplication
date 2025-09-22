@@ -8,6 +8,7 @@
     "scheme": "habittracker",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": false,
+    "platforms": ["android"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.anonymous.HabitTracker"

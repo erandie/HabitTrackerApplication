@@ -24,6 +24,7 @@ const COLORS = {
 // Theme configuration
 const themes = {
   light: {
+    backgroundWhite: '#ffffff',
     background: COLORS.background,
     textPrimary: COLORS.textPrimary,
     textSecondary: COLORS.textSecondary,
