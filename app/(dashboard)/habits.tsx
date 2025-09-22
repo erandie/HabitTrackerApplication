@@ -8,7 +8,7 @@ import { db } from '../../firebase';
 import { addHabit, updateHabit, deleteHabit } from '../../services/habitService';
 import HabitCard from '../../components/habitCard';
 import * as Notifications from 'expo-notifications';
-import { useTheme } from '../_layout';
+import { useTheme } from '@/app/(dashboard)/_layout';
 import Animated, { FadeInDown, FadeInRight, FadeInUp } from 'react-native-reanimated';
 
 // Define our color palette
@@ -46,6 +46,7 @@ export default function HabitsScreen() {
   const [showCompleted, setShowCompleted] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const { theme } = useTheme() || { theme: 'light' as const };
+  const { colors } = useTheme();
 
   // Fetch habits for refresh
   const fetchHabits = useCallback(async () => {
@@ -213,20 +214,24 @@ export default function HabitsScreen() {
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Animated Header */}
       <Animated.View entering={FadeInUp.duration(800).springify()} style={styles.header}>
-        <Text style={styles.title}>My Habits 🌱</Text>
-        <Text style={styles.subtitle}>Cultivate your daily routines</Text>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>My Habits 🌱</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Cultivate your daily routines</Text>
       </Animated.View>
 
       {/* Search and Filter Row */}
       <Animated.View entering={FadeInDown.delay(200).duration(600)} style={styles.filterRow}>
         <View style={styles.searchContainer}>
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { 
+              backgroundColor: colors.backgroundWhite,
+              color: colors.textPrimary,
+              borderColor: colors.textSecondary 
+            }]}
             placeholder="Search habits..."
-            placeholderTextColor={COLORS.textSecondary}
+            placeholderTextColor={colors.textSecondary}
             value={searchQuery}
             onChangeText={text => {
               setSearchQuery(text);
@@ -237,15 +242,15 @@ export default function HabitsScreen() {
         </View>
         
         <View style={styles.switchContainer}>
-          <Text style={styles.switchLabel}>Show Completed</Text>
+          <Text style={[styles.switchLabel, { color: colors.textPrimary }]}>Show Completed</Text>
           <Switch
             value={showCompleted}
             onValueChange={value => {
               setShowCompleted(value);
               applyFilters(habits);
             }}
-            trackColor={{ false: '#d1d5db', true: COLORS.primary }}
-            thumbColor={showCompleted ? COLORS.primaryLight : '#f4f3f4'}
+            trackColor={{ false: '#d1d5db', true: COLORS.primary }} // Keep original colors
+            thumbColor={showCompleted ? COLORS.primaryLight : '#f4f3f4'} // Keep original colors
           />
         </View>
       </Animated.View>
@@ -253,90 +258,89 @@ export default function HabitsScreen() {
       {/* Habits List */}
       {loading ? (
         <Animated.View entering={FadeInDown.delay(400)} style={styles.centerMessage}>
-          <Text style={styles.messageText}>Loading your habits... ⏳</Text>
+          <Text style={[styles.messageText, { color: colors.textPrimary }]}>Loading your habits... ⏳</Text>
         </Animated.View>
       ) : filteredHabits.length === 0 ? (
         <Animated.View entering={FadeInDown.delay(400)} style={styles.centerMessage}>
-          <Text style={styles.messageText}>
+          <Text style={[styles.messageText, { color: colors.textPrimary }]}>
             {searchQuery ? "No habits found 🌵" : "No habits yet! Tap + to start growing 🌟"}
           </Text>
           {!searchQuery && (
-            <Text style={[styles.messageText, {fontSize: 14, marginTop: 8}]}>
+            <Text style={[styles.messageText, {fontSize: 14, marginTop: 8, color: colors.textSecondary }]}>
               Your journey to better habits starts here
             </Text>
           )}
         </Animated.View>
       ) : (
         <FlatList
-  data={filteredHabits}
-  renderItem={({item, index}) => (
-  <Animated.View 
-    entering={FadeInDown.delay(200 + index * 80).springify().damping(12)}
-    style={styles.habitSquare}
-  >
-    {/* Main Content */}
-    <View style={styles.habitContent}>
-      <View style={styles.emojiContainer}>
-        <Text style={styles.habitEmoji}>
-          {item.completed ? '✅' : '⏳'}
-        </Text>
-      </View>
-      
-      <View style={styles.habitInfo}>
-        <Text style={styles.habitTitle} numberOfLines={2}>
-          {item.title}
-        </Text>
-        <Text style={styles.habitDate}>
-          Started {item.createdAt.toLocaleDateString()}
-        </Text>
-      </View>
+          data={filteredHabits}
+          renderItem={({item, index}) => (
+            <Animated.View 
+              entering={FadeInDown.delay(200 + index * 80).springify().damping(12)}
+              style={[styles.habitSquare, { backgroundColor: colors.backgroundWhite }]}
+            >
+              {/* Main Content */}
+              <View style={styles.habitContent}>
+                <View style={styles.emojiContainer}>
+                  <Text style={styles.habitEmoji}>
+                    {item.completed ? '✅' : '⏳'}
+                  </Text>
+                </View>
+                
+                <View style={styles.habitInfo}>
+                  <Text style={[styles.habitTitle, { color: colors.textPrimary }]} numberOfLines={2}>
+                    {item.title}
+                  </Text>
+                  <Text style={[styles.habitDate, { color: colors.textSecondary }]}>
+                    Started {item.createdAt.toLocaleDateString()}
+                  </Text>
+                </View>
 
-      {/* Toggle Button - Use handleToggle directly */}
-      <TouchableOpacity 
-        onPress={() => handleToggle(item.id, item.completed)}
-        style={[
-          styles.toggleBtn,
-          item.completed && styles.toggleBtnCompleted
-        ]}
-      >
-        <Text style={styles.toggleIcon}>
-          {item.completed ? '✓' : '○'}
-        </Text>
-      </TouchableOpacity>
-    </View>
+                {/* Toggle Button - Use handleToggle directly */}
+                <TouchableOpacity 
+                  onPress={() => handleToggle(item.id, item.completed)}
+                  style={[
+                    styles.toggleBtn,
+                    item.completed && styles.toggleBtnCompleted
+                  ]}
+                >
+                  <Text style={styles.toggleIcon}>
+                    {item.completed ? '✓' : '○'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
 
-    {/* Action Buttons */}
-    <View style={styles.actionContainer}>
-      <TouchableOpacity 
-        onPress={() => handleEdit(item)}
-        style={[styles.actionBtn, styles.editBtn]}
-      >
-        <Text style={styles.actionText}>✏️ Edit</Text>
-      </TouchableOpacity>
-      
-      <View style={styles.divider} />
-      
-      <TouchableOpacity 
-        onPress={() => handleDelete(item.id)}
-        style={[styles.actionBtn, styles.deleteBtn]}
-      >
-        <Text style={styles.actionText}>🗑️ Delete</Text>
-      </TouchableOpacity>
-    </View>
-  </Animated.View>
-)}
-
-    keyExtractor={(item) => item.id}
-      contentContainerStyle={styles.listContent}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={fetchHabits}
-          colors={[COLORS.primary]}
-          tintColor={COLORS.primary}
+              {/* Action Buttons */}
+              <View style={styles.actionContainer}>
+                <TouchableOpacity 
+                  onPress={() => handleEdit(item)}
+                  style={[styles.actionBtn, styles.editBtn]}
+                >
+                  <Text style={styles.actionText}>✏️ Edit</Text>
+                </TouchableOpacity>
+                
+                <View style={styles.divider} />
+                
+                <TouchableOpacity 
+                  onPress={() => handleDelete(item.id)}
+                  style={[styles.actionBtn, styles.deleteBtn]}
+                >
+                  <Text style={styles.actionText}>🗑️ Delete</Text>
+                </TouchableOpacity>
+              </View>
+            </Animated.View>
+          )}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={fetchHabits}
+              colors={[COLORS.primary]} // Keep original green
+              tintColor={COLORS.primary} // Keep original green
+            />
+          }
         />
-      }
-  />
       )}
 
       {/* Floating Add Button */}

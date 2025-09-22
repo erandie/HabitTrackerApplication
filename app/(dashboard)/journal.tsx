@@ -9,7 +9,7 @@ import { addJournal, updateJournal, deleteJournal } from '../../services/journal
 import JournalCard from '../../components/journalCard';
 import * as Notifications from 'expo-notifications';
 import { Picker } from '@react-native-picker/picker';
-import { useTheme } from '../_layout';
+import { useTheme } from '@/app/(dashboard)/_layout';
 import Animated, { FadeInUp, FadeInDown, FadeInRight } from 'react-native-reanimated';
 
 // Define our color palette
@@ -46,6 +46,7 @@ export default function JournalScreen() {
   const [moodFilter, setMoodFilter] = useState('all');
   const [refreshing, setRefreshing] = useState(false);
   const { theme } = useTheme() || { theme: 'light' as const };
+  const { colors } = useTheme();
 
   // Fetch journal entries
   const fetchEntries = useCallback(async () => {
@@ -222,20 +223,24 @@ export default function JournalScreen() {
 
 
  return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Animated Header */}
       <Animated.View entering={FadeInUp.duration(800).springify()} style={styles.header}>
-        <Text style={styles.title}>My Journal 📔</Text>
-        <Text style={styles.subtitle}>Capture your thoughts and feelings</Text>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>My Journal 📔</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Capture your thoughts and feelings</Text>
       </Animated.View>
 
       {/* Search and Filter Row */}
       <Animated.View entering={FadeInDown.delay(200).duration(600)} style={styles.filterRow}>
         <View style={styles.searchContainer}>
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { 
+              backgroundColor: colors.backgroundWhite,
+              color: colors.textPrimary,
+              borderColor: colors.textSecondary 
+            }]}
             placeholder="Search entries..."
-            placeholderTextColor={COLORS.textSecondary}
+            placeholderTextColor={colors.textSecondary}
             value={searchQuery}
             onChangeText={text => {
               setSearchQuery(text);
@@ -246,7 +251,7 @@ export default function JournalScreen() {
         </View>
 
         <View style={styles.moodFilter}>
-          <Text style={styles.filterLabel}>Mood:</Text>
+          <Text style={[styles.filterLabel, { color: colors.textPrimary }]}>Mood:</Text>
           <View style={styles.moodButtons}>
             {['all', 'happy', 'sad', 'neutral'].map((mood) => (
               <TouchableOpacity
@@ -276,18 +281,18 @@ export default function JournalScreen() {
       {/* Journal Entries List */}
       {loading ? (
         <Animated.View entering={FadeInDown.delay(400)} style={styles.centerMessage}>
-          <Text style={styles.messageText}>Loading your thoughts... 💭</Text>
+          <Text style={[styles.messageText, { color: colors.textPrimary }]}>Loading your thoughts... 💭</Text>
         </Animated.View>
       ) : filteredEntries.length === 0 ? (
         <Animated.View entering={FadeInDown.delay(400)} style={styles.centerMessage}>
-          <Text style={styles.messageText}>
+          <Text style={[styles.messageText, { color: colors.textPrimary }]}>
             {searchQuery || moodFilter !== 'all' 
               ? "No entries found 🌵" 
               : "No journal entries yet! Tap + to start writing ✨"
             }
           </Text>
           {!searchQuery && moodFilter === 'all' && (
-            <Text style={[styles.messageText, {fontSize: 14, marginTop: 8}]}>
+            <Text style={[styles.messageText, {fontSize: 14, marginTop: 8, color: colors.textSecondary }]}>
               Your first entry is waiting to be written
             </Text>
           )}
@@ -298,7 +303,7 @@ export default function JournalScreen() {
           renderItem={({item, index}) => (
             <Animated.View 
               entering={FadeInRight.delay(400 + index * 100).springify()}
-              style={styles.journalCard}
+              style={[styles.journalCard, { backgroundColor: colors.backgroundWhite }]}
             >
               {/* Mood Indicator */}
               <View style={[styles.moodIndicator, { backgroundColor: getMoodColor(item.mood) }]}>
@@ -307,11 +312,11 @@ export default function JournalScreen() {
 
               {/* Content */}
               <View style={styles.cardContent}>
-                <Text style={styles.entryTitle} numberOfLines={1}>{item.title}</Text>
-                <Text style={styles.entryPreview} numberOfLines={3}>
+                <Text style={[styles.entryTitle, { color: colors.textPrimary }]} numberOfLines={1}>{item.title}</Text>
+                <Text style={[styles.entryPreview, { color: colors.textSecondary }]} numberOfLines={3}>
                   {item.content.length > 120 ? item.content.substring(0, 120) + '...' : item.content}
                 </Text>
-                <Text style={styles.entryDate}>
+                <Text style={[styles.entryDate, { color: colors.textSecondary }]}>
                   {item.createdAt.toLocaleDateString()} • {item.mood}
                 </Text>
               </View>
@@ -339,8 +344,8 @@ export default function JournalScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={fetchEntries}
-              colors={[COLORS.primary]}
-              tintColor={COLORS.primary}
+              colors={[COLORS.primary]} // Keep original green
+              tintColor={COLORS.primary} // Keep original green
             />
           }
         />
