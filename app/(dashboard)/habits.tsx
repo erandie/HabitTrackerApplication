@@ -72,7 +72,7 @@ export default function HabitsScreen() {
         } as Habit);
       });
       setHabits(habitsData);
-      applyFilters(habitsData);
+      setFilteredHabits(habitsData); // Load all habits initially
     } catch (error: any) {
       Alert.alert('Error', 'Failed to load habits: ' + error.message);
       console.error('Fetch error:', error);
@@ -104,7 +104,7 @@ export default function HabitsScreen() {
         } as Habit);
       });
       setHabits(habitsData);
-      applyFilters(habitsData);
+      setFilteredHabits(habitsData); // Load all habits initially
       setLoading(false);
     }, (error) => {
       Alert.alert('Error', 'Failed to load habits: ' + error.message);
@@ -127,8 +127,8 @@ export default function HabitsScreen() {
         habit.title.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
-    if (!showCompleted) {
-      filtered = filtered.filter(habit => !habit.completed);
+    if (showCompleted) {
+      filtered = filtered.filter(habit => habit.completed); // Show only completed when toggle is on
     }
     setFilteredHabits(filtered);
   }, [searchQuery, showCompleted]);
@@ -207,11 +207,17 @@ export default function HabitsScreen() {
   const renderHabit = ({ item }: { item: Habit }) => (
     <HabitCard
       habit={item}
-      onToggle={handleToggle}  // Make sure this is passed
-      onDelete={handleDelete}  // And these too
+      onToggle={handleToggle}
+      onDelete={handleDelete}
       onEdit={handleEdit}
     />
   );
+
+  // Toggle showCompleted state
+  const toggleShowCompleted = () => {
+    setShowCompleted(!showCompleted);
+    applyFilters(habits);
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -238,19 +244,16 @@ export default function HabitsScreen() {
               applyFilters(habits);
             }}
           />
-          <Text style={{position: 'absolute', right: 12, top: 12}}>🔍</Text>
+          <Text style={{ position: 'absolute', right: 12, top: 12 }}>🔍</Text>
         </View>
         
         <View style={styles.switchContainer}>
           <Text style={[styles.switchLabel, { color: colors.textPrimary }]}>Show Completed</Text>
           <Switch
             value={showCompleted}
-            onValueChange={value => {
-              setShowCompleted(value);
-              applyFilters(habits);
-            }}
-            trackColor={{ false: '#d1d5db', true: COLORS.primary }} // Keep original colors
-            thumbColor={showCompleted ? COLORS.primaryLight : '#f4f3f4'} // Keep original colors
+            onValueChange={toggleShowCompleted}
+            trackColor={{ false: '#d1d5db', true: COLORS.primary }}
+            thumbColor={showCompleted ? COLORS.primaryLight : '#f4f3f4'}
           />
         </View>
       </Animated.View>
@@ -266,7 +269,7 @@ export default function HabitsScreen() {
             {searchQuery ? "No habits found 🌵" : "No habits yet! Tap + to start growing 🌟"}
           </Text>
           {!searchQuery && (
-            <Text style={[styles.messageText, {fontSize: 14, marginTop: 8, color: colors.textSecondary }]}>
+            <Text style={[styles.messageText, { fontSize: 14, marginTop: 8, color: colors.textSecondary }]}>
               Your journey to better habits starts here
             </Text>
           )}
@@ -274,7 +277,7 @@ export default function HabitsScreen() {
       ) : (
         <FlatList
           data={filteredHabits}
-          renderItem={({item, index}) => (
+          renderItem={({ item, index }) => (
             <Animated.View 
               entering={FadeInDown.delay(200 + index * 80).springify().damping(12)}
               style={[styles.habitSquare, { backgroundColor: colors.backgroundWhite }]}
@@ -292,11 +295,11 @@ export default function HabitsScreen() {
                     {item.title}
                   </Text>
                   <Text style={[styles.habitDate, { color: colors.textSecondary }]}>
-                    Started {item.createdAt.toLocaleDateString()}
+                    Started {item.createdAt ? item.createdAt.toLocaleDateString() : 'N/A'}
                   </Text>
                 </View>
 
-                {/* Toggle Button - Use handleToggle directly */}
+                {/* Toggle Button */}
                 <TouchableOpacity 
                   onPress={() => handleToggle(item.id, item.completed)}
                   style={[
@@ -336,8 +339,8 @@ export default function HabitsScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={fetchHabits}
-              colors={[COLORS.primary]} // Keep original green
-              tintColor={COLORS.primary} // Keep original green
+              colors={[COLORS.primary]}
+              tintColor={COLORS.primary}
             />
           }
         />
@@ -481,7 +484,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginBottom: 16,
     padding: 20,
-    borderWidth: 2,
+    borderWidth: 0.1,
     borderColor: '#e5e7eb',
     ...Platform.select({
       ios: {
@@ -549,8 +552,8 @@ const styles = StyleSheet.create({
   actionContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    borderTopWidth: 1,
-    borderTopColor: '#f1f5f9',
+    borderTopWidth: 0.3,
+    borderTopColor: '#606163ff',
     paddingTop: 16,
   },
   actionBtn: {
@@ -587,10 +590,11 @@ const styles = StyleSheet.create({
   },
   divider: {
     width: 1,
-    backgroundColor: '#e5e7eb',
+    backgroundColor: '#676869ff',
     marginHorizontal: 8,
   },
   listContent: {
     paddingBottom: 100,
   },
 });
+

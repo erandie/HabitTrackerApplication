@@ -8,7 +8,7 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useTheme } from '../_layout';
+import { useTheme } from '@/app/(dashboard)/_layout';
 import Animated, { FadeInUp, FadeInDown, FadeInRight } from 'react-native-reanimated';
 
 // Define our color palette
@@ -144,14 +144,14 @@ export default function ProfileScreen() {
     router.push('/(dashboard)/EditProfile');
   };
 
-   return (
+  return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: colors.background }]}
       refreshControl={
         <RefreshControl 
           refreshing={refreshing} 
           onRefresh={fetchCounts} 
-          colors={[COLORS.primary]} 
+          colors={[COLORS.primary]} // Keep original green
         />
       }
     >
@@ -162,40 +162,40 @@ export default function ProfileScreen() {
             style={styles.avatar}
             source={imageUri ? { uri: `data:image/png;base64,${imageUri}` } : require('../../assets/images/habitTrackerAvater.jpeg')}
           />
-          <Text style={styles.changePhotoText}>📷 Change Photo</Text>
+          <Text style={[styles.changePhotoText, { color: colors.accent }]}>📷 Change Photo</Text>
         </TouchableOpacity>
         
-        <Text style={styles.userName}>{user?.displayName || 'Hello Friend! 👋'}</Text>
-        <Text style={styles.userEmail}>{user?.email || 'No email'}</Text>
+        <Text style={[styles.userName, { color: colors.textPrimary }]}>{user?.displayName || 'Hello Friend! 👋'}</Text>
+        <Text style={[styles.userEmail, { color: colors.textSecondary }]}>{user?.email || 'No email'}</Text>
       </Animated.View>
 
       {/* Stats Cards */}
       <Animated.View entering={FadeInDown.delay(200).duration(600)} style={styles.statsContainer}>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{habitsCount}</Text>
-          <Text style={styles.statLabel}>Habits 🌱</Text>
+        <View style={[styles.statCard, { backgroundColor: colors.backgroundWhite }]}>
+          <Text style={[styles.statNumber, { color: colors.accent }]}>{habitsCount}</Text>
+          <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Habits 🌱</Text>
         </View>
         
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{journalCount}</Text>
-          <Text style={styles.statLabel}>Journals 📔</Text>
+        <View style={[styles.statCard, { backgroundColor: colors.backgroundWhite }]}>
+          <Text style={[styles.statNumber, { color: colors.accent }]}>{journalCount}</Text>
+          <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Journals 📔</Text>
         </View>
         
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{streak}</Text>
-          <Text style={styles.statLabel}>Day Streak 🔥</Text>
+        <View style={[styles.statCard, { backgroundColor: colors.backgroundWhite }]}>
+          <Text style={[styles.statNumber, { color: colors.accent }]}>{streak}</Text>
+          <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Day Streak 🔥</Text>
         </View>
       </Animated.View>
 
       {/* Menu Options */}
-      <Animated.View entering={FadeInRight.delay(400).duration(600)} style={styles.menuContainer}>
+      <Animated.View entering={FadeInRight.delay(400).duration(600)} style={[styles.menuContainer, { backgroundColor: colors.backgroundWhite }]}>
         <TouchableOpacity
           style={styles.menuItem}
           onPress={() => router.push('/(dashboard)/AddNote')}
         >
           <Text style={styles.menuIcon}>📒</Text>
-          <Text style={styles.menuText}>My Notes</Text>
-          <Text style={styles.menuArrow}>›</Text>
+          <Text style={[styles.menuText, { color: colors.textPrimary }]}>My Notes</Text>
+          <Text style={[styles.menuArrow, { color: colors.textSecondary }]}>›</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -203,8 +203,8 @@ export default function ProfileScreen() {
           onPress={handleEditProfile}
         >
           <Text style={styles.menuIcon}>👤</Text>
-          <Text style={styles.menuText}>Edit Profile</Text>
-          <Text style={styles.menuArrow}>›</Text>
+          <Text style={[styles.menuText, { color: colors.textPrimary }]}>Edit Profile</Text>
+          <Text style={[styles.menuArrow, { color: colors.textSecondary }]}>›</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -212,8 +212,8 @@ export default function ProfileScreen() {
           onPress={() => router.push('/login')}
         >
           <Text style={styles.menuIcon}>🔐</Text>
-          <Text style={styles.menuText}>Login</Text>
-          <Text style={styles.menuArrow}>›</Text>
+          <Text style={[styles.menuText, { color: colors.textPrimary }]}>Login</Text>
+          <Text style={[styles.menuArrow, { color: colors.textSecondary }]}>›</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -221,8 +221,8 @@ export default function ProfileScreen() {
           onPress={() => router.push('/register')}
         >
           <Text style={styles.menuIcon}>✍️</Text>
-          <Text style={styles.menuText}>Sign Up</Text>
-          <Text style={styles.menuArrow}>›</Text>
+          <Text style={[styles.menuText, { color: colors.textPrimary }]}>Sign Up</Text>
+          <Text style={[styles.menuArrow, { color: colors.textSecondary }]}>›</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -230,8 +230,8 @@ export default function ProfileScreen() {
           onPress={() => Alert.alert('Settings', 'Settings coming soon! ⚙️')}
         >
           <Text style={styles.menuIcon}>⚙️</Text>
-          <Text style={styles.menuText}>Settings</Text>
-          <Text style={styles.menuArrow}>›</Text>
+          <Text style={[styles.menuText, { color: colors.textPrimary }]}>Settings</Text>
+          <Text style={[styles.menuArrow, { color: colors.textSecondary }]}>›</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -239,15 +239,15 @@ export default function ProfileScreen() {
           onPress={handleLogout}
         >
           <Text style={styles.menuIcon}>🚪</Text>
-          <Text style={[styles.menuText, styles.logoutText]}>Logout</Text>
-          <Text style={styles.menuArrow}>›</Text>
+          <Text style={[styles.menuText, styles.logoutText, { color: colors.textPrimary }]}>Logout</Text>
+          <Text style={[styles.menuArrow, { color: colors.textSecondary }]}>›</Text>
         </TouchableOpacity>
       </Animated.View>
 
       {/* Motivational Footer */}
       <Animated.View entering={FadeInUp.delay(600).duration(600)} style={styles.footer}>
-        <Text style={styles.footerText}>Keep growing! 🌟</Text>
-        <Text style={styles.footerSubtext}>Every habit counts towards a better you</Text>
+        <Text style={[styles.footerText, { color: colors.textPrimary }]}>Keep growing! 🌟</Text>
+        <Text style={[styles.footerSubtext, { color: colors.textSecondary }]}>Every habit counts towards a better you</Text>
       </Animated.View>
     </ScrollView>
   );
@@ -348,8 +348,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    borderBottomWidth: 0.3,
+    borderBottomColor: '#979595ff',
   },
   logoutItem: {
     borderBottomWidth: 0,

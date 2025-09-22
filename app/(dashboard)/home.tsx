@@ -57,7 +57,6 @@ export default function HomeScreen() {
   const [notes, setNotes] = useState<{ id: string; title: string; note: string }[]>([]);
   const progress = useSharedValue(0)
   
-  
   // Fetch latest 3 notes
   const fetchNotes = useCallback(async () => {
     if (!user) {
@@ -98,7 +97,6 @@ export default function HomeScreen() {
     const words = note.split(' ').slice(0, 5).join(' ');
     return words.length < note.length ? `${words}...` : words;
   };
-  
 
   // Fetch analytics data
   const calculateAnalytics = useCallback(async () => {
@@ -194,8 +192,6 @@ export default function HomeScreen() {
   },
 ];
 
-
-
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]} // Only change background color
@@ -211,7 +207,7 @@ export default function HomeScreen() {
       {/* Header Greeting */}
       <Animated.View entering={FadeInUp.duration(800)} style={styles.header}>
         <Text style={[styles.greeting, { color: colors.textPrimary }]}> {/* Only text color */}
-          {getGreeting()}{user?.displayName ? `, ${user.displayName}` : ''}! 🌟
+          {getGreeting()}{user?.displayName ? ` ${user.displayName}` : ''}! 🌟
         </Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}> {/* Only text color */}
           Track your habits, journal your thoughts
@@ -219,13 +215,13 @@ export default function HomeScreen() {
       </Animated.View>
 
       {/* Streak Card */}
-      <Animated.View entering={FadeInRight.delay(200)} style={[styles.statsCard, { backgroundColor: colors.backgroundWhite }]}> {/* Only background color */}
+      <Animated.View entering={FadeInRight.delay(200)} style={[styles.statsCard, { backgroundColor: colors.backgroundWhite }]}>
         <View>
-          <Text style={[styles.statsLabel, { color: colors.textSecondary }]}>Current Streak</Text> {/* Only text color */}
-          <Text style={[styles.statsValue, { color: colors.accent }]}>{streak} days 🔥</Text> {/* Only text color */}
+          <Text style={[styles.statsLabel, { color: colors.textSecondary }]}>Current Streak</Text>
+          <Text style={[styles.statsValue, { color: colors.accent }]}>{streak} days 🔥</Text>
         </View>
-        <View style={styles.streakIcon}> {/* No changes to layout */}
-          <Text>🔥</Text>
+        <View style={styles.streakIcon}>
+          <Text>🔥</Text>  {/* This is fine - Text inside View */}
         </View>
       </Animated.View>
 
