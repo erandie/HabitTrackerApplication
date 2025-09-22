@@ -17,3 +17,11 @@ export interface JournalEntry {
   createdAt: Date;
   userId: string;
 }
+
+export interface Note {
+  id: string;
+  title: string;
+  note: string;
+  userId: string;
+  createdAt: Date;
+}

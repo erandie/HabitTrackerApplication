@@ -149,6 +149,7 @@ export default function DashboardLayout() {
             <Tabs.Screen name="AddJournal" options={{ href: null }} />
             <Tabs.Screen name="EditJournal" options={{ href: null }} />
             <Tabs.Screen name="EditProfile" options={{ href: null }} />
+            <Tabs.Screen name="AddNote" options={{ href: null }} />
           </Tabs>
         </AuthProvider>
       </LoaderProvider>

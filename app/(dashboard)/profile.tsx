@@ -8,6 +8,7 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '../_layout';
 
 export default function ProfileScreen() {
   const { user } = useAuth();
@@ -17,6 +18,7 @@ export default function ProfileScreen() {
   const [streak, setStreak] = useState(0);
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const { theme, colors } = useTheme();
 
   // Load saved image on mount
   useEffect(() => {
@@ -160,6 +162,15 @@ export default function ProfileScreen() {
         </View>
 
         <View className="bg-white rounded-lg shadow-md shadow-black/10">
+
+        <TouchableOpacity
+          className="p-4 border-b border-gray-200"
+          onPress={() => router.push('/(dashboard)/AddNote')}
+          accessibilityLabel="Add Note"
+        >
+          <Text className={`text-base ${colors.textPrimary}`}>📒 Notes</Text>
+        </TouchableOpacity>
+        
           <TouchableOpacity
             className="p-4 border-b border-gray-200"
             onPress={handleEditProfile}

@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '../../firebase';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
 import { BarChart, LineChart } from 'react-native-chart-kit';
 import { useTheme } from '@/app/(dashboard)/_layout';
 
@@ -16,6 +16,49 @@ export default function HomeScreen() {
   const [streak, setStreak] = useState(0);
   const [theme, setTheme] = useState<'light' | 'dark' | 'pink'>('light');
   const [refreshing, setRefreshing] = useState(false);
+  const { colors } = useTheme();
+  const [notes, setNotes] = useState<{ id: string; title: string; note: string }[]>([]);
+
+  // Fetch latest 3 notes
+  const fetchNotes = useCallback(async () => {
+    if (!user) {
+      setNotes([]);
+      setRefreshing(false);
+      return;
+    }
+
+    setRefreshing(true);
+    try {
+      const notesQuery = query(
+        collection(db, 'notes'),
+        where('userId', '==', user.uid),
+        orderBy('createdAt', 'desc'),
+        limit(3)
+      );
+      const notesSnapshot = await getDocs(notesQuery);
+      const notesData = notesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        title: doc.data().title,
+        note: doc.data().note,
+      }));
+      setNotes(notesData);
+    } catch (error: any) {
+      Alert.alert('Error', 'Failed to load notes: ' + error.message);
+      console.error('Fetch error:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchNotes();
+  }, [fetchNotes]);
+
+  // Get first few words of note (e.g., first 5 words)
+  const getNotePreview = (note: string) => {
+    const words = note.split(' ').slice(0, 5).join(' ');
+    return words.length < note.length ? `${words}...` : words;
+  };
   
 
   // Fetch analytics data
@@ -109,17 +152,39 @@ export default function HomeScreen() {
     >
       <View className="flex-1">
         <Text
-          className="text-3xl font-bold mb-2 text-center"
+          className="text-3xl font-bold mb-2"
           style={{ color: theme === 'dark' ? '#e2e8f0' : theme === 'pink' ? '#4a2c2a' : '#2d3748' }}
         >
           {getGreeting()} {user?.displayName || user?.email || 'Guest'}!
         </Text>
-        <Text
+
+         
+        {/* Latest Notes Section */}
+        <View className="mb-6">
+          <Text className={`text-xl font-bold mb-4 ${colors.textPrimary}`}>Recent Notes</Text>
+          {notes.length > 0 ? (
+            notes.map(note => (
+              <View
+                key={note.id}
+                className={`p-4 mb-4 rounded-lg ${colors.inputBackground} border border-gray-300`}
+              >
+                <Text className={`text-lg font-semibold ${colors.textPrimary}`}>{note.title}</Text>
+                <Text className={`text-base ${colors.textSecondary}`}>
+                  {getNotePreview(note.note)}
+                </Text>
+              </View>
+            ))
+          ) : (
+            <Text className={`text-base ${colors.textSecondary}`}>No notes yet.</Text>
+          )}
+        </View>
+
+        {/* <Text
           className="text-base mb-6 text-center"
           style={{ color: theme === 'dark' ? '#a0aec0' : '#718096' }}
         >
           Track your habits and journal your thoughts
-        </Text>
+        </Text> */}
         {/* Theme Toggle */}
       
 
@@ -189,13 +254,13 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <TouchableOpacity
+        {/* <TouchableOpacity
           className="bg-red-600 rounded-md p-3 mt-auto"
           onPress={handleLogout}
           accessibilityLabel="Logout"
         >
           <Text className="text-white text-center text-base font-medium">Logout</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
     </ScrollView>
   );
