@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "habittracker",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.anonymous.HabitTracker"
@@ -21,7 +21,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.HabitTracker",
+      "package": "com.erandie.HabitTracker",
       "useNextNotificationsApi": true
     },
     "web": {
@@ -45,13 +45,21 @@
       ],
       "expo-notifications"
     ],
-    
     "notification": {
       "icon": "./assets/icon.png"
     },
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "044dbda5-e76b-4415-941a-8e4c09e936af"
+      }
+    },
+    "cli": {
+      "appVersionSource": "local"
     }
   }
 }

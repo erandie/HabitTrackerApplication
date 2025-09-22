@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TouchableOpacity, Alert, Image, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, Image, ScrollView, RefreshControl, Dimensions, Platform, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { signOut } from 'firebase/auth';
@@ -9,6 +9,22 @@ import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../_layout';
+import Animated, { FadeInUp, FadeInDown, FadeInRight } from 'react-native-reanimated';
+
+// Define our color palette
+const COLORS = {
+  primary: '#10b981',
+  primaryLight: '#a7f3d0',
+  primaryDark: '#047857',
+  background: '#f8fafc',
+  surface: '#ffffff',
+  textPrimary: '#1e293b',
+  textSecondary: '#64748b',
+  accent: '#f59e0b',
+  error: '#ef4444',
+};
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function ProfileScreen() {
   const { user } = useAuth();
@@ -128,82 +144,250 @@ export default function ProfileScreen() {
     router.push('/(dashboard)/EditProfile');
   };
 
-  return (
+   return (
     <ScrollView
-      className="flex-1 bg-gray-50"
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={fetchCounts} colors={['#4a6bdf']} />}
+      style={styles.container}
+      refreshControl={
+        <RefreshControl 
+          refreshing={refreshing} 
+          onRefresh={fetchCounts} 
+          colors={[COLORS.primary]} 
+        />
+      }
     >
-      <View className="flex-1 p-5 bg-gray-50">
-        <View className="items-center mb-7">
-          <TouchableOpacity onPress={pickImage} accessibilityLabel="Change profile picture">
-            <Image
-              className="w-24 h-24 rounded-full bg-gray-200"
-              source={imageUri ? { uri: `data:image/png;base64,${imageUri}` } : require('../../assets/images/habitTrackerAvater.jpeg')}
-            />
-            <Text className="text-sm text-blue-600 mt-2">Change Profile Picture</Text>
-          </TouchableOpacity>
-          <Text className="text-xl font-bold text-gray-800 mb-1">{user?.displayName || 'No nickname'}</Text>
-          <Text className="text-base text-gray-600">{user?.email || 'No email'}</Text>
-        </View>
-
-        <View className="flex-row justify-between mb-7">
-          <View className="items-center bg-white p-4 rounded-lg shadow-md shadow-black/10 w-[30%]">
-            <Text className="text-lg font-bold text-blue-600 mb-1">{habitsCount}</Text>
-            <Text className="text-xs text-gray-600 text-center">Habits</Text>
-          </View>
-          <View className="items-center bg-white p-4 rounded-lg shadow-md shadow-black/10 w-[30%]">
-            <Text className="text-lg font-bold text-blue-600 mb-1">{journalCount}</Text>
-            <Text className="text-xs text-gray-600 text-center">Journal Entries</Text>
-          </View>
-          <View className="items-center bg-white p-4 rounded-lg shadow-md shadow-black/10 w-[30%]">
-            <Text className="text-lg font-bold text-blue-600 mb-1">{streak}</Text>
-            <Text className="text-xs text-gray-600 text-center">Day Streak</Text>
-          </View>
-        </View>
-
-        <View className="bg-white rounded-lg shadow-md shadow-black/10">
-
-        <TouchableOpacity
-          className="p-4 border-b border-gray-200"
-          onPress={() => router.push('/(dashboard)/AddNote')}
-          accessibilityLabel="Add Note"
-        >
-          <Text className={`text-base ${colors.textPrimary}`}>📒 Notes</Text>
+      {/* Profile Header */}
+      <Animated.View entering={FadeInUp.duration(800).springify()} style={styles.header}>
+        <TouchableOpacity onPress={pickImage} style={styles.avatarContainer}>
+          <Image
+            style={styles.avatar}
+            source={imageUri ? { uri: `data:image/png;base64,${imageUri}` } : require('../../assets/images/habitTrackerAvater.jpeg')}
+          />
+          <Text style={styles.changePhotoText}>📷 Change Photo</Text>
         </TouchableOpacity>
         
-          <TouchableOpacity
-            className="p-4 border-b border-gray-200"
-            onPress={handleEditProfile}
-            accessibilityLabel="Edit profile"
-          >
-            <Text className="text-base text-gray-800">Edit Profile</Text>
-          </TouchableOpacity>
-          {/* Placeholder for future implementation */}
-          {/* <TouchableOpacity className="p-4 border-b border-gray-200" accessibilityLabel="Settings">
-            <Text className="text-base text-gray-800">Settings</Text>
-          </TouchableOpacity>
-          <TouchableOpacity className="p-4 border-b border-gray-200" accessibilityLabel="Help and support">
-            <Text className="text-base text-gray-800">Help & Support</Text>
-          </TouchableOpacity> */}
+        <Text style={styles.userName}>{user?.displayName || 'Hello Friend! 👋'}</Text>
+        <Text style={styles.userEmail}>{user?.email || 'No email'}</Text>
+      </Animated.View>
 
-          <TouchableOpacity className="p-4" onPress={handleLogout} accessibilityLabel="Setting">
-            <Text className="text-base text-black-600">Setting</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            className="p-4"
-            accessibilityLabel="Go to Login"
-            onPress={() => router.push('/login')}
-          >
-            <Text className="text-base text-black-600">Login</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity className="p-4" onPress={handleLogout} accessibilityLabel="Logout">
-            <Text className="text-base text-red-600">Logout</Text>
-          </TouchableOpacity>
-          
+      {/* Stats Cards */}
+      <Animated.View entering={FadeInDown.delay(200).duration(600)} style={styles.statsContainer}>
+        <View style={styles.statCard}>
+          <Text style={styles.statNumber}>{habitsCount}</Text>
+          <Text style={styles.statLabel}>Habits 🌱</Text>
         </View>
-      </View>
+        
+        <View style={styles.statCard}>
+          <Text style={styles.statNumber}>{journalCount}</Text>
+          <Text style={styles.statLabel}>Journals 📔</Text>
+        </View>
+        
+        <View style={styles.statCard}>
+          <Text style={styles.statNumber}>{streak}</Text>
+          <Text style={styles.statLabel}>Day Streak 🔥</Text>
+        </View>
+      </Animated.View>
+
+      {/* Menu Options */}
+      <Animated.View entering={FadeInRight.delay(400).duration(600)} style={styles.menuContainer}>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => router.push('/(dashboard)/AddNote')}
+        >
+          <Text style={styles.menuIcon}>📒</Text>
+          <Text style={styles.menuText}>My Notes</Text>
+          <Text style={styles.menuArrow}>›</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={handleEditProfile}
+        >
+          <Text style={styles.menuIcon}>👤</Text>
+          <Text style={styles.menuText}>Edit Profile</Text>
+          <Text style={styles.menuArrow}>›</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => router.push('/login')}
+        >
+          <Text style={styles.menuIcon}>🔐</Text>
+          <Text style={styles.menuText}>Login</Text>
+          <Text style={styles.menuArrow}>›</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => router.push('/register')}
+        >
+          <Text style={styles.menuIcon}>✍️</Text>
+          <Text style={styles.menuText}>Sign Up</Text>
+          <Text style={styles.menuArrow}>›</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => Alert.alert('Settings', 'Settings coming soon! ⚙️')}
+        >
+          <Text style={styles.menuIcon}>⚙️</Text>
+          <Text style={styles.menuText}>Settings</Text>
+          <Text style={styles.menuArrow}>›</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.menuItem, styles.logoutItem]}
+          onPress={handleLogout}
+        >
+          <Text style={styles.menuIcon}>🚪</Text>
+          <Text style={[styles.menuText, styles.logoutText]}>Logout</Text>
+          <Text style={styles.menuArrow}>›</Text>
+        </TouchableOpacity>
+      </Animated.View>
+
+      {/* Motivational Footer */}
+      <Animated.View entering={FadeInUp.delay(600).duration(600)} style={styles.footer}>
+        <Text style={styles.footerText}>Keep growing! 🌟</Text>
+        <Text style={styles.footerSubtext}>Every habit counts towards a better you</Text>
+      </Animated.View>
     </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  header: {
+    alignItems: 'center',
+    padding: 24,
+    paddingTop: 40,
+  },
+  avatarContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  avatar: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: COLORS.primaryLight,
+  },
+  changePhotoText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: COLORS.primary,
+    fontWeight: '500',
+  },
+  userName: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  userEmail: {
+    fontSize: 16,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    marginBottom: 32,
+  },
+  statCard: {
+    backgroundColor: COLORS.surface,
+    padding: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+    width: (SCREEN_WIDTH - 72) / 3, // Account for padding and gaps
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  statNumber: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: COLORS.primary,
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  menuContainer: {
+    backgroundColor: COLORS.surface,
+    marginHorizontal: 24,
+    borderRadius: 16,
+    marginBottom: 32,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  logoutItem: {
+    borderBottomWidth: 0,
+  },
+  menuIcon: {
+    fontSize: 20,
+    marginRight: 16,
+    width: 24,
+    textAlign: 'center',
+  },
+  menuText: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '500',
+    color: COLORS.textPrimary,
+  },
+  logoutText: {
+    color: COLORS.error,
+  },
+  menuArrow: {
+    fontSize: 20,
+    color: COLORS.textSecondary,
+    fontWeight: 'bold',
+  },
+  footer: {
+    alignItems: 'center',
+    padding: 24,
+    paddingBottom: 40,
+  },
+  footerText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    marginBottom: 4,
+  },
+  footerSubtext: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+  },
+});

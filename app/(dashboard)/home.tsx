@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, Alert, ScrollView, RefreshControl } from 'react-native';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { View, Text, TouchableOpacity, Alert, ScrollView, RefreshControl, StyleSheet, Dimensions, Platform} from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { signOut } from 'firebase/auth';
@@ -7,6 +7,29 @@ import { auth, db } from '../../firebase';
 import { collection, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
 import { BarChart, LineChart } from 'react-native-chart-kit';
 import { useTheme } from '@/app/(dashboard)/_layout';
+import { useFonts, Inter_400Regular, Inter_600SemiBold } from '@expo-google-fonts/inter';
+import Animated, { 
+  FadeIn, 
+  FadeInUp, 
+  FadeInRight, 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withSpring,
+  withSequence,
+  withTiming 
+} from 'react-native-reanimated';
+
+const COLORS = {
+  primary: '#10b981',
+  primaryLight: '#a7f3d0',
+  primaryDark: '#047857',
+  background: '#f8fafc',
+  surface: '#ffffff',
+  textPrimary: '#1e293b',
+  textSecondary: '#64748b',
+  accent: '#f59e0b',
+};
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const { user } = useAuth();
@@ -18,7 +41,8 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const { colors } = useTheme();
   const [notes, setNotes] = useState<{ id: string; title: string; note: string }[]>([]);
-
+  const progress = useSharedValue(0)
+  
   // Fetch latest 3 notes
   const fetchNotes = useCallback(async () => {
     if (!user) {
@@ -137,131 +161,255 @@ export default function HomeScreen() {
     return 'Good Evening,';
   };
 
-  return (
+  const sampleNotes = [
+  {
+    id: '1',
+    title: 'Morning Reflection',
+    note: 'Started the day with a refreshing walk and some mindfulness practice. Feeling energized and ready to tackle my goals!',
+  },
+  {
+    id: '2',
+    title: 'Gratitude Journal',
+    note: 'Grateful for my supportive friends and family. Also, completed my workout goal for the week!',
+  },
+  {
+    id: '3',
+    title: 'Evening Thoughts',
+    note: 'Reflected on today’s progress. Need to focus more on hydration tomorrow.',
+  },
+];
+
+
+
+   return (
     <ScrollView
-      className="flex-1 p-5"
-      style={{ backgroundColor: theme === 'dark' ? '#1a202c' : theme === 'pink' ? '#f5e6e8' : '#f5f6fa' }}
+      style={styles.container} // Changed from className
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
           onRefresh={calculateAnalytics}
-          colors={['#4a6bdf']}
-          tintColor={theme === 'dark' ? '#e2e8f0' : '#4a6bdf'}
+          colors={[COLORS.primary]} // Use our new color
+          tintColor={COLORS.primary} // Use our new color
         />
       }
     >
-      <View className="flex-1">
-        <Text
-          className="text-3xl font-bold mb-2"
-          style={{ color: theme === 'dark' ? '#e2e8f0' : theme === 'pink' ? '#4a2c2a' : '#2d3748' }}
-        >
-          {getGreeting()} {user?.displayName || user?.email || 'Guest'}!
+      {/* Header Greeting */}
+      <Animated.View entering={FadeInUp.duration(800)} style={styles.header}>
+        <Text style={styles.greeting}>
+          {getGreeting()}{user?.displayName ? `, ${user.displayName}` : ''}! 🌟
         </Text>
+        <Text style={styles.subtitle}>Track your habits, journal your thoughts</Text>
+      </Animated.View>
 
-         
-        {/* Latest Notes Section */}
-        <View className="mb-6">
-          <Text className={`text-xl font-bold mb-4 ${colors.textPrimary}`}>Recent Notes</Text>
-          {notes.length > 0 ? (
-            notes.map(note => (
-              <View
-                key={note.id}
-                className={`p-4 mb-4 rounded-lg ${colors.inputBackground} border border-gray-300`}
-              >
-                <Text className={`text-lg font-semibold ${colors.textPrimary}`}>{note.title}</Text>
-                <Text className={`text-base ${colors.textSecondary}`}>
-                  {getNotePreview(note.note)}
-                </Text>
-              </View>
-            ))
-          ) : (
-            <Text className={`text-base ${colors.textSecondary}`}>No notes yet.</Text>
-          )}
+      {/* Streak Card */}
+      <Animated.View entering={FadeInRight.delay(200)} style={styles.statsCard}>
+        <View>
+          <Text style={styles.statsLabel}>Current Streak</Text>
+          <Text style={styles.statsValue}>{streak} days 🔥</Text>
+        </View>
+        <View style={styles.streakIcon}>
+          <Text>🔥</Text>
+        </View>
+      </Animated.View>
+
+      {/* Recent Notes Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Recent Notes 📔</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.notesScrollContainer}>
+          {(notes.length > 0 ? notes : sampleNotes).map((note, index) => (
+            <View key={note.id || index} style={styles.noteCard}>
+              <Text style={styles.noteTitle} numberOfLines={1}>{note.title}</Text>
+              <Text style={styles.notePreview} numberOfLines={3}>
+                {getNotePreview(note.note)}
+              </Text>
+            </View>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* Analytics Dashboard */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Your Progress 📊</Text>
+
+        {/* Habit Completion */}
+        <View style={styles.chartContainer}>
+          <Text style={styles.chartTitle}>Habit Completion Rate</Text>
+          <BarChart
+            data={{
+              labels: ['Completed', 'Incomplete'],
+              datasets: [{ data: [habitCompletionRate, 100 - habitCompletionRate] }],
+            }}
+            width={SCREEN_WIDTH - 64}
+            height={200}
+            yAxisLabel=""
+            yAxisSuffix="%"
+            chartConfig={{
+              backgroundColor: COLORS.surface,
+              backgroundGradientFrom: COLORS.surface,
+              backgroundGradientTo: COLORS.surface,
+              decimalPlaces: 0,
+              color: (opacity = 1) => `rgba(16, 185, 129, ${opacity})`, // Green
+              labelColor: (opacity = 1) => `rgba(30, 41, 59, ${opacity})`,
+            }}
+            style={styles.chart}
+          />
         </View>
 
-        {/* <Text
-          className="text-base mb-6 text-center"
-          style={{ color: theme === 'dark' ? '#a0aec0' : '#718096' }}
-        >
-          Track your habits and journal your thoughts
-        </Text> */}
-        {/* Theme Toggle */}
-      
-
-        {/* Analytics Dashboard with Charts */}
-        <View className="mb-6">
-          <Text
-            className="text-xl font-bold mb-4"
-            style={{ color: theme === 'dark' ? '#e2e8f0' : theme === 'pink' ? '#4a2c2a' : '#2d3748' }}
-          >
-            Your Progress
-          </Text>
-          {/* Habit Completion Bar Chart */}
-          <View className="mb-4">
-            <Text
-              className="text-lg mb-2"
-              style={{ color: theme === 'dark' ? '#a0aec0' : '#718096' }}
-            >
-              Habit Completion Rate
-            </Text>
-            <BarChart
-              data={{
-                labels: ['Completed', 'Incomplete'],
-                datasets: [{ data: [habitCompletionRate, 100 - habitCompletionRate] }],
-              }}
-              width={300}
-              height={200}
-              yAxisLabel="%"
-              yAxisSuffix="%"
-              chartConfig={{
-                backgroundColor: theme === 'dark' ? '#2d3748' : theme === 'pink' ? '#f5e6e8' : '#f5f6fa',
-                backgroundGradientFrom: theme === 'dark' ? '#2d3748' : theme === 'pink' ? '#f5e6e8' : '#f5f6fa',
-                backgroundGradientTo: theme === 'dark' ? '#2d3748' : theme === 'pink' ? '#f5e6e8' : '#f5f6fa',
-                decimalPlaces: 0,
-                color: (opacity = 1) => `rgba(74, 107, 223, ${opacity})`,
-                labelColor: (opacity = 1) => theme === 'dark' ? `rgba(226, 232, 240, ${opacity})` : `rgba(0, 0, 0, ${opacity})`,
-              }}
-              style={{ marginVertical: 8 }}
-            />
-          </View>
-
-          {/* Journal Frequency Line Chart */}
-          <View>
-            <Text
-              className="text-lg mb-2"
-              style={{ color: theme === 'dark' ? '#a0aec0' : '#718096' }}
-            >
-              Journal Entries (Weekly)
-            </Text>
-            <LineChart
-              data={{
-                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                datasets: [{ data: journalFrequencyData }],
-              }}
-              width={300}
-              height={200}
-              yAxisLabel=""
-              chartConfig={{
-                backgroundColor: theme === 'dark' ? '#2d3748' : theme === 'pink' ? '#f5e6e8' : '#f5f6fa',
-                backgroundGradientFrom: theme === 'dark' ? '#2d3748' : theme === 'pink' ? '#f5e6e8' : '#f5f6fa',
-                backgroundGradientTo: theme === 'dark' ? '#2d3748' : theme === 'pink' ? '#f5e6e8' : '#f5f6fa',
-                decimalPlaces: 0,
-                color: (opacity = 1) => `rgba(212, 165, 165, ${opacity})`,
-                labelColor: (opacity = 1) => theme === 'dark' ? `rgba(226, 232, 240, ${opacity})` : `rgba(0, 0, 0, ${opacity})`,
-              }}
-              style={{ marginVertical: 8 }}
-            />
-          </View>
+        {/* Journal Frequency */}
+        <View style={styles.chartContainer}>
+          <Text style={styles.chartTitle}>Journal Frequency (This Week)</Text>
+          <LineChart
+            data={{
+              labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+              datasets: [{ data: journalFrequencyData }],
+            }}
+            width={SCREEN_WIDTH - 64}
+            height={200}
+            yAxisLabel=""
+            chartConfig={{
+              backgroundColor: COLORS.surface,
+              backgroundGradientFrom: COLORS.surface,
+              backgroundGradientTo: COLORS.surface,
+              decimalPlaces: 0,
+              color: (opacity = 1) => `rgba(16, 185, 129, ${opacity})`, // Green
+              labelColor: (opacity = 1) => `rgba(30, 41, 59, ${opacity})`,
+              propsForDots: {
+                r: "5",
+                fill: COLORS.primary,
+              },
+            }}
+            bezier
+            style={styles.chart}
+          />
         </View>
-
-        {/* <TouchableOpacity
-          className="bg-red-600 rounded-md p-3 mt-auto"
-          onPress={handleLogout}
-          accessibilityLabel="Logout"
-        >
-          <Text className="text-white text-center text-base font-medium">Logout</Text>
-        </TouchableOpacity> */}
       </View>
     </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f8fafc', // COLORS.background
+    padding: 16,
+  },
+  header: {
+    marginBottom: 20,
+  },
+  greeting: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#1e293b', // COLORS.textPrimary
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#64748b', // COLORS.textSecondary
+  },
+  statsCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#ffffff', // COLORS.surface
+    padding: 20,
+    borderRadius: 16,
+    marginBottom: 24,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 6,
+      },
+    }),
+  },
+  statsLabel: {
+    fontSize: 14,
+    color: '#64748b', // COLORS.textSecondary
+    marginBottom: 4,
+  },
+  statsValue: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#1e293b', // COLORS.textPrimary
+  },
+  streakIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#a7f3d0', // COLORS.primaryLight
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  section: {
+    marginBottom: 32,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#1e293b', // COLORS.textPrimary
+    marginBottom: 16,
+  },
+  notesScrollContainer: {
+    paddingHorizontal: 8,
+  },
+  noteCard: {
+    width: 250,
+    backgroundColor: '#ffffff', // COLORS.surface
+    padding: 16,
+    borderRadius: 12,
+    marginRight: 12,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  noteTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1e293b', // COLORS.textPrimary
+    marginBottom: 8,
+  },
+  notePreview: {
+    fontSize: 14,
+    color: '#64748b', // COLORS.textSecondary
+    lineHeight: 20,
+  },
+  chartContainer: {
+    backgroundColor: '#ffffff', // COLORS.surface
+    padding: 20,
+    borderRadius: 16,
+    marginBottom: 20,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  chartTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1e293b', // COLORS.textPrimary
+    marginBottom: 12,
+  },
+  chart: {
+    borderRadius: 8,
+    alignSelf: 'center',
+  },
+});

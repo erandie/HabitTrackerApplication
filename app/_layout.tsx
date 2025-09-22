@@ -5,6 +5,9 @@ import * as Notifications from 'expo-notifications';
 import { AuthProvider } from '@/context/AuthContext';
 import { LoaderProvider } from '@/context/LoaderContext';
 import './../global.css';
+import { LogBox } from 'react-native';
+
+LogBox.ignoreLogs(['Unknown event handler property `onResponderTerminate`']);
 
 // Theme configuration
 const themes = {

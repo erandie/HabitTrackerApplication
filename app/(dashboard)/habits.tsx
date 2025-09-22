@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert, Platform, TextInput, Switch, RefreshControl } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Alert, Platform, TextInput, Switch, RefreshControl, StyleSheet, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { Habit } from '../../types';
@@ -9,6 +9,22 @@ import { addHabit, updateHabit, deleteHabit } from '../../services/habitService'
 import HabitCard from '../../components/habitCard';
 import * as Notifications from 'expo-notifications';
 import { useTheme } from '../_layout';
+import Animated, { FadeInDown, FadeInRight, FadeInUp } from 'react-native-reanimated';
+
+// Define our color palette
+const COLORS = {
+  primary: '#10b981',
+  primaryLight: '#a7f3d0',
+  primaryDark: '#047857',
+  background: '#f8fafc',
+  surface: '#ffffff',
+  textPrimary: '#1e293b',
+  textSecondary: '#64748b',
+  accent: '#f59e0b',
+  error: '#ef4444',
+};
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -190,78 +206,387 @@ export default function HabitsScreen() {
   const renderHabit = ({ item }: { item: Habit }) => (
     <HabitCard
       habit={item}
-      onToggle={handleToggle}
-      onDelete={handleDelete}
+      onToggle={handleToggle}  // Make sure this is passed
+      onDelete={handleDelete}  // And these too
       onEdit={handleEdit}
     />
   );
 
   return (
-    <View className="flex-1 p-5" style={{ backgroundColor: theme === 'dark' ? '#1a202c' : theme === 'pink' ? '#f5e6e8' : '#f5f6fa' }}>
-      <Text
-        className="text-2xl font-bold mb-4 text-center"
-        style={{ color: theme === 'dark' ? '#e2e8f0' : theme === 'pink' ? '#4a2c2a' : '#2d3748' }}
-      >
-        My Habits
-      </Text>
-      <View className="mb-4 flex-row items-center">
-        <TextInput
-          className="bg-white rounded-lg p-2 text-gray-800 flex-1 mr-2"
-          placeholder="Search by title..."
-          placeholderTextColor="#a0aec0"
-          value={searchQuery}
-          onChangeText={text => {
-            setSearchQuery(text);
-            applyFilters(habits);
-          }}
-          style={{ color: theme === 'dark' ? '#e2e8f0' : '#2d3748' }}
-        />
-        <View className="flex-row items-center">
-          <Text className="mr-2" style={{ color: theme === 'dark' ? '#e2e8f0' : '#718096' }}>
-            Show Completed
-          </Text>
+    <View style={styles.container}>
+      {/* Animated Header */}
+      <Animated.View entering={FadeInUp.duration(800).springify()} style={styles.header}>
+        <Text style={styles.title}>My Habits 🌱</Text>
+        <Text style={styles.subtitle}>Cultivate your daily routines</Text>
+      </Animated.View>
+
+      {/* Search and Filter Row */}
+      <Animated.View entering={FadeInDown.delay(200).duration(600)} style={styles.filterRow}>
+        <View style={styles.searchContainer}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search habits..."
+            placeholderTextColor={COLORS.textSecondary}
+            value={searchQuery}
+            onChangeText={text => {
+              setSearchQuery(text);
+              applyFilters(habits);
+            }}
+          />
+          <Text style={{position: 'absolute', right: 12, top: 12}}>🔍</Text>
+        </View>
+        
+        <View style={styles.switchContainer}>
+          <Text style={styles.switchLabel}>Show Completed</Text>
           <Switch
             value={showCompleted}
             onValueChange={value => {
               setShowCompleted(value);
               applyFilters(habits);
             }}
-            trackColor={{ false: '#d1d5db', true: '#4a6bdf' }}
-            thumbColor={theme === 'dark' ? '#e2e8f0' : '#ffffff'}
+            trackColor={{ false: '#d1d5db', true: COLORS.primary }}
+            thumbColor={showCompleted ? COLORS.primaryLight : '#f4f3f4'}
           />
         </View>
-      </View>
+      </Animated.View>
+
+      {/* Habits List */}
       {loading ? (
-        <Text className="text-base text-gray-500 text-center mt-5" style={{ color: theme === 'dark' ? '#a0aec0' : '#718096' }}>
-          Loading habits...
-        </Text>
+        <Animated.View entering={FadeInDown.delay(400)} style={styles.centerMessage}>
+          <Text style={styles.messageText}>Loading your habits... ⏳</Text>
+        </Animated.View>
       ) : filteredHabits.length === 0 ? (
-        <Text className="text-base text-gray-500 text-center mt-5" style={{ color: theme === 'dark' ? '#a0aec0' : '#718096' }}>
-          No habits match your filter. Add one!
-        </Text>
+        <Animated.View entering={FadeInDown.delay(400)} style={styles.centerMessage}>
+          <Text style={styles.messageText}>
+            {searchQuery ? "No habits found 🌵" : "No habits yet! Tap + to start growing 🌟"}
+          </Text>
+          {!searchQuery && (
+            <Text style={[styles.messageText, {fontSize: 14, marginTop: 8}]}>
+              Your journey to better habits starts here
+            </Text>
+          )}
+        </Animated.View>
       ) : (
         <FlatList
-          data={filteredHabits}
-          renderItem={renderHabit}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingBottom: 80 }}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={fetchHabits}
-              colors={['#4a6bdf']}
-              tintColor={theme === 'dark' ? '#e2e8f0' : '#4a6bdf'}
-            />
-          }
-        />
-      )}
-      <TouchableOpacity
-        className="absolute bottom-6 right-6 bg-green-600 rounded-full p-3.5 shadow-md elevation-3"
-        onPress={addNewHabit}
-        accessibilityLabel="Add new habit"
+  data={filteredHabits}
+  renderItem={({item, index}) => (
+  <Animated.View 
+    entering={FadeInDown.delay(200 + index * 80).springify().damping(12)}
+    style={styles.habitSquare}
+  >
+    {/* Main Content */}
+    <View style={styles.habitContent}>
+      <View style={styles.emojiContainer}>
+        <Text style={styles.habitEmoji}>
+          {item.completed ? '✅' : '⏳'}
+        </Text>
+      </View>
+      
+      <View style={styles.habitInfo}>
+        <Text style={styles.habitTitle} numberOfLines={2}>
+          {item.title}
+        </Text>
+        <Text style={styles.habitDate}>
+          Started {item.createdAt.toLocaleDateString()}
+        </Text>
+      </View>
+
+      {/* Toggle Button - Use handleToggle directly */}
+      <TouchableOpacity 
+        onPress={() => handleToggle(item.id, item.completed)}
+        style={[
+          styles.toggleBtn,
+          item.completed && styles.toggleBtnCompleted
+        ]}
       >
-        <Text className="text-white font-bold text-lg">+ Add Habit</Text>
+        <Text style={styles.toggleIcon}>
+          {item.completed ? '✓' : '○'}
+        </Text>
       </TouchableOpacity>
+    </View>
+
+    {/* Action Buttons */}
+    <View style={styles.actionContainer}>
+      <TouchableOpacity 
+        onPress={() => handleEdit(item)}
+        style={[styles.actionBtn, styles.editBtn]}
+      >
+        <Text style={styles.actionText}>✏️ Edit</Text>
+      </TouchableOpacity>
+      
+      <View style={styles.divider} />
+      
+      <TouchableOpacity 
+        onPress={() => handleDelete(item.id)}
+        style={[styles.actionBtn, styles.deleteBtn]}
+      >
+        <Text style={styles.actionText}>🗑️ Delete</Text>
+      </TouchableOpacity>
+    </View>
+  </Animated.View>
+)}
+
+    keyExtractor={(item) => item.id}
+      contentContainerStyle={styles.listContent}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={fetchHabits}
+          colors={[COLORS.primary]}
+          tintColor={COLORS.primary}
+        />
+      }
+  />
+      )}
+
+      {/* Floating Add Button */}
+      <Animated.View 
+        entering={FadeInUp.delay(600).springify()}
+        style={styles.fabContainer}
+      >
+        <TouchableOpacity
+          style={styles.fab}
+          onPress={addNewHabit}
+          accessibilityLabel="Add new habit"
+        >
+          <Text style={styles.fabText}>+</Text>
+        </TouchableOpacity>
+      </Animated.View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+    padding: 16,
+  },
+  header: {
+    marginBottom: 24,
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: COLORS.textSecondary,
+  },
+  filterRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    gap: 12,
+  },
+  searchContainer: {
+    flex: 1,
+    position: 'relative',
+  },
+  searchInput: {
+    backgroundColor: COLORS.surface,
+    padding: 12,
+    borderRadius: 12,
+    fontSize: 16,
+    color: COLORS.textPrimary,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  switchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surface,
+    padding: 8,
+    borderRadius: 12,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  switchLabel: {
+    marginRight: 8,
+    color: COLORS.textSecondary,
+    fontSize: 14,
+  },
+  centerMessage: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  messageText: {
+    fontSize: 18,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  
+  fabContainer: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+  },
+  fab: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
+  },
+  fabText: {
+    color: COLORS.surface,
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginTop: -2,
+  },
+
+  habitSquare: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    marginBottom: 16,
+    padding: 20,
+    borderWidth: 2,
+    borderColor: '#e5e7eb',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 6,
+      },
+    }),
+  },
+  habitContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  emojiContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 12,
+    backgroundColor: COLORS.primaryLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  habitEmoji: {
+    fontSize: 24,
+  },
+  habitInfo: {
+    flex: 1,
+  },
+  habitTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    marginBottom: 4,
+    lineHeight: 24,
+  },
+  habitDate: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    fontStyle: 'italic',
+  },
+  toggleBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
+  toggleBtnCompleted: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primaryDark,
+  },
+  toggleIcon: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.primary,
+  },
+  actionContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    borderTopWidth: 1,
+    borderTopColor: '#f1f5f9',
+    paddingTop: 16,
+  },
+  actionBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  editBtn: {
+    backgroundColor: COLORS.primaryLight,
+    marginRight: 8,
+  },
+  deleteBtn: {
+    backgroundColor: '#fee2e2',
+    marginLeft: 8,
+  },
+  actionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+  },
+  divider: {
+    width: 1,
+    backgroundColor: '#e5e7eb',
+    marginHorizontal: 8,
+  },
+  listContent: {
+    paddingBottom: 100,
+  },
+});

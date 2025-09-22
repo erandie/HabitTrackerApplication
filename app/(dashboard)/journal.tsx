@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert, Platform, TextInput, RefreshControl } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Alert, Platform, TextInput, RefreshControl, Dimensions, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { JournalEntry } from '../../types';
@@ -10,6 +10,21 @@ import JournalCard from '../../components/journalCard';
 import * as Notifications from 'expo-notifications';
 import { Picker } from '@react-native-picker/picker';
 import { useTheme } from '../_layout';
+import Animated, { FadeInUp, FadeInDown, FadeInRight } from 'react-native-reanimated';
+
+// Define our color palette
+const COLORS = {
+  primary: '#10b981',
+  primaryLight: '#a7f3d0',
+  primaryDark: '#047857',
+  background: '#f8fafc',
+  surface: '#ffffff',
+  textPrimary: '#1e293b',
+  textSecondary: '#64748b',
+  accent: '#f59e0b',
+};
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -184,70 +199,362 @@ export default function JournalScreen() {
     />
   );
 
-  return (
-    <View className="flex-1 p-5" style={{ backgroundColor: theme === 'dark' ? '#1a202c' : theme === 'pink' ? '#f5e6e8' : '#f5f6fa' }}>
-      <Text className="text-2xl font-bold mb-4 text-center" style={{ color: theme === 'dark' ? '#e2e8f0' : theme === 'pink' ? '#4a2c2a' : '#2d3748' }}>
-        My Journal
-      </Text>
-      <View className="mb-4">
-        <TextInput
-          className="bg-white rounded-lg p-2 text-gray-800 mb-2"
-          placeholder="Search by title or content..."
-          placeholderTextColor="#a0aec0"
-          value={searchQuery}
-          onChangeText={text => {
-            setSearchQuery(text);
-            applyFilters(entries);
-          }}
-          style={{ color: theme === 'dark' ? '#e2e8f0' : '#2d3748' }}
-        />
-        <View className="bg-white rounded-lg p-1">
-          <Picker
-            selectedValue={moodFilter}
-            onValueChange={(value) => {
-              setMoodFilter(value);
+  const getMoodEmoji = (mood: string) => {
+    switch (mood) {
+      case 'happy': return '😊';
+      case 'sad': return '😢';
+      case 'neutral': return '😐';
+      case 'excited': return '🤩';
+      case 'angry': return '😠';
+      case 'tired': return '😴';
+      default: return '📝';
+    }
+  };
+
+  const getMoodColor = (mood: string) => {
+    switch (mood) {
+      case 'happy': return '#f59e0b'; // Amber
+      case 'sad': return '#3b82f6'; // Blue
+      case 'neutral': return '#10b981'; // Green
+      default: return '#10b981'; // Green
+    }
+  };
+
+
+ return (
+    <View style={styles.container}>
+      {/* Animated Header */}
+      <Animated.View entering={FadeInUp.duration(800).springify()} style={styles.header}>
+        <Text style={styles.title}>My Journal 📔</Text>
+        <Text style={styles.subtitle}>Capture your thoughts and feelings</Text>
+      </Animated.View>
+
+      {/* Search and Filter Row */}
+      <Animated.View entering={FadeInDown.delay(200).duration(600)} style={styles.filterRow}>
+        <View style={styles.searchContainer}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search entries..."
+            placeholderTextColor={COLORS.textSecondary}
+            value={searchQuery}
+            onChangeText={text => {
+              setSearchQuery(text);
               applyFilters(entries);
             }}
-            style={{ color: theme === 'dark' ? '#e2e8f0' : '#2d3748' }}
-          >
-            <Picker.Item label="All Moods" value="all" />
-            <Picker.Item label="Happy 😊" value="happy" />
-            <Picker.Item label="Sad 😢" value="sad" />
-            <Picker.Item label="Neutral 😐" value="neutral" />
-          </Picker>
+          />
+          <Text style={{position: 'absolute', right: 12, top: 12}}>🔍</Text>
         </View>
-      </View>
+
+        <View style={styles.moodFilter}>
+          <Text style={styles.filterLabel}>Mood:</Text>
+          <View style={styles.moodButtons}>
+            {['all', 'happy', 'sad', 'neutral'].map((mood) => (
+              <TouchableOpacity
+                key={mood}
+                style={[
+                  styles.moodButton,
+                  moodFilter === mood && styles.moodButtonActive,
+                  moodFilter === mood && { backgroundColor: getMoodColor(mood) }
+                ]}
+                onPress={() => {
+                  setMoodFilter(mood);
+                  applyFilters(entries);
+                }}
+              >
+                <Text style={[
+                  styles.moodButtonText,
+                  moodFilter === mood && styles.moodButtonTextActive
+                ]}>
+                  {mood === 'all' ? 'All' : getMoodEmoji(mood)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </Animated.View>
+
+      {/* Journal Entries List */}
       {loading ? (
-        <Text className="text-base text-gray-500 text-center mt-5" style={{ color: theme === 'dark' ? '#a0aec0' : '#718096' }}>
-          Loading entries...
-        </Text>
+        <Animated.View entering={FadeInDown.delay(400)} style={styles.centerMessage}>
+          <Text style={styles.messageText}>Loading your thoughts... 💭</Text>
+        </Animated.View>
       ) : filteredEntries.length === 0 ? (
-        <Text className="text-base text-gray-500 text-center mt-5" style={{ color: theme === 'dark' ? '#a0aec0' : '#718096' }}>
-          No entries match your filter. Add one!
-        </Text>
+        <Animated.View entering={FadeInDown.delay(400)} style={styles.centerMessage}>
+          <Text style={styles.messageText}>
+            {searchQuery || moodFilter !== 'all' 
+              ? "No entries found 🌵" 
+              : "No journal entries yet! Tap + to start writing ✨"
+            }
+          </Text>
+          {!searchQuery && moodFilter === 'all' && (
+            <Text style={[styles.messageText, {fontSize: 14, marginTop: 8}]}>
+              Your first entry is waiting to be written
+            </Text>
+          )}
+        </Animated.View>
       ) : (
         <FlatList
           data={filteredEntries}
-          renderItem={renderEntry}
+          renderItem={({item, index}) => (
+            <Animated.View 
+              entering={FadeInRight.delay(400 + index * 100).springify()}
+              style={styles.journalCard}
+            >
+              {/* Mood Indicator */}
+              <View style={[styles.moodIndicator, { backgroundColor: getMoodColor(item.mood) }]}>
+                <Text style={styles.moodEmoji}>{getMoodEmoji(item.mood)}</Text>
+              </View>
+
+              {/* Content */}
+              <View style={styles.cardContent}>
+                <Text style={styles.entryTitle} numberOfLines={1}>{item.title}</Text>
+                <Text style={styles.entryPreview} numberOfLines={3}>
+                  {item.content.length > 120 ? item.content.substring(0, 120) + '...' : item.content}
+                </Text>
+                <Text style={styles.entryDate}>
+                  {item.createdAt.toLocaleDateString()} • {item.mood}
+                </Text>
+              </View>
+
+              {/* Actions */}
+              <View style={styles.cardActions}>
+                <TouchableOpacity 
+                  onPress={() => handleEdit(item)}
+                  style={[styles.actionButton, styles.editButton]}
+                >
+                  <Text style={styles.actionText}>✏️ Edit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  onPress={() => handleDelete(item.id)}
+                  style={[styles.actionButton, styles.deleteButton]}
+                >
+                  <Text style={styles.actionText}>🗑️</Text>
+                </TouchableOpacity>
+              </View>
+            </Animated.View>
+          )}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingBottom: 80 }}
+          contentContainerStyle={styles.listContent}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
               onRefresh={fetchEntries}
-              colors={['#4a6bdf']}
-              tintColor={theme === 'dark' ? '#e2e8f0' : '#4a6bdf'}
+              colors={[COLORS.primary]}
+              tintColor={COLORS.primary}
             />
           }
         />
       )}
-      <TouchableOpacity
-        className="absolute bottom-6 right-6 bg-blue-600 rounded-full p-3.5 shadow-md elevation-3"
-        onPress={addNewEntry}
-        accessibilityLabel="Add new journal entry"
+
+      {/* Floating Add Button */}
+      <Animated.View 
+        entering={FadeInUp.delay(600).springify()}
+        style={styles.fabContainer}
       >
-        <Text className="text-white font-bold text-lg">+ Add Entry</Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.fab}
+          onPress={addNewEntry}
+          accessibilityLabel="Add new journal entry"
+        >
+          <Text style={styles.fabText}>+</Text>
+        </TouchableOpacity>
+      </Animated.View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+    padding: 16,
+  },
+  header: {
+    marginBottom: 24,
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: COLORS.textSecondary,
+  },
+  filterRow: {
+    marginBottom: 20,
+    gap: 16,
+  },
+  searchContainer: {
+    position: 'relative',
+  },
+  searchInput: {
+    backgroundColor: COLORS.surface,
+    padding: 12,
+    borderRadius: 12,
+    fontSize: 16,
+    color: COLORS.textPrimary,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  moodFilter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  filterLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+  },
+  moodButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  moodButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: COLORS.primaryLight,
+    minWidth: 40,
+    alignItems: 'center',
+  },
+  moodButtonActive: {
+    backgroundColor: COLORS.primary,
+  },
+  moodButtonText: {
+    fontSize: 16,
+    color: COLORS.textPrimary,
+  },
+  moodButtonTextActive: {
+    color: COLORS.surface,
+    fontWeight: '600',
+  },
+  centerMessage: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  messageText: {
+    fontSize: 18,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  journalCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    marginBottom: 16,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  moodIndicator: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  moodEmoji: {
+    fontSize: 20,
+  },
+  cardContent: {
+    flex: 1,
+  },
+  entryTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    marginBottom: 8,
+  },
+  entryPreview: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  entryDate: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    fontStyle: 'italic',
+  },
+  cardActions: {
+    flexDirection: 'row',
+    gap: 8,
+    marginLeft: 12,
+  },
+  actionButton: {
+    padding: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  editButton: {
+    backgroundColor: COLORS.primaryLight,
+  },
+  deleteButton: {
+    backgroundColor: '#fee2e2',
+  },
+  actionText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+  },
+  listContent: {
+    paddingBottom: 100,
+  },
+  fabContainer: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+  },
+  fab: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
+  },
+  fabText: {
+    color: COLORS.surface,
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginTop: -2,
+  },
+});
