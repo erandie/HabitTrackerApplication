@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { addHabit } from '../../services/habitService';
 import { useAuth } from '../../context/AuthContext';
 import Animated, { FadeInDown, FadeInUp, ZoomIn } from 'react-native-reanimated';
+import { useTheme } from '../(dashboard)/_layout';
 
 // Emerald green color palette
 const COLORS = {
@@ -24,6 +25,7 @@ const AddHabit = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [frequency, setFrequency] = useState<'daily' | 'weekly'>('daily');
+  const { colors } = useTheme();
 
   const handleSaveHabit = async () => {
     if (!user) {
@@ -48,19 +50,23 @@ const AddHabit = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Animated.Text 
         entering={FadeInDown.duration(600).springify()}
-        style={styles.title}
+        style={[styles.title, { color: colors.textPrimary }]}
       >
         Create New Habit 🌱
       </Animated.Text>
       
       <Animated.View entering={FadeInUp.delay(100).duration(600)} style={styles.inputContainer}>
         <TextInput
-          style={styles.input}
+          style={[styles.input, { 
+            backgroundColor: colors.backgroundWhite,
+            color: colors.textPrimary,
+            borderColor: colors.textSecondary
+          }]}
           placeholder="Habit Title (e.g., Drink Water 💧)"
-          placeholderTextColor={COLORS.textSecondary}
+          placeholderTextColor={colors.textSecondary}
           value={title}
           onChangeText={setTitle}
         />
@@ -68,9 +74,13 @@ const AddHabit = () => {
 
       <Animated.View entering={FadeInUp.delay(200).duration(600)} style={styles.inputContainer}>
         <TextInput
-          style={[styles.input, styles.textArea]}
+          style={[styles.input, styles.textArea, { 
+            backgroundColor: colors.backgroundWhite,
+            color: colors.textPrimary,
+            borderColor: colors.textSecondary
+          }]}
           placeholder="Description (optional) 📝"
-          placeholderTextColor={COLORS.textSecondary}
+          placeholderTextColor={colors.textSecondary}
           value={description}
           onChangeText={setDescription}
           multiline
@@ -80,7 +90,7 @@ const AddHabit = () => {
 
       <Animated.Text 
         entering={FadeInUp.delay(300).duration(600)}
-        style={styles.sectionLabel}
+        style={[styles.sectionLabel, { color: colors.textPrimary }]}
       >
         Frequency 🔄
       </Animated.Text>
@@ -89,12 +99,14 @@ const AddHabit = () => {
         <TouchableOpacity
           style={[
             styles.frequencyButton,
+            { backgroundColor: colors.backgroundWhite, borderColor: colors.textSecondary },
             frequency === 'daily' && styles.frequencyButtonActive
           ]}
           onPress={() => setFrequency('daily')}
         >
           <Text style={[
             styles.frequencyText,
+            { color: colors.textSecondary },
             frequency === 'daily' && styles.frequencyTextActive
           ]}>
             Daily 🌞
@@ -110,12 +122,14 @@ const AddHabit = () => {
         <TouchableOpacity
           style={[
             styles.frequencyButton,
+            { backgroundColor: colors.backgroundWhite, borderColor: colors.textSecondary },
             frequency === 'weekly' && styles.frequencyButtonActive
           ]}
           onPress={() => setFrequency('weekly')}
         >
           <Text style={[
             styles.frequencyText,
+            { color: colors.textSecondary },
             frequency === 'weekly' && styles.frequencyTextActive
           ]}>
             Weekly 📅
@@ -131,17 +145,17 @@ const AddHabit = () => {
 
       <Animated.View entering={FadeInUp.delay(500).duration(600)} style={styles.buttonContainer}>
         <TouchableOpacity 
-          style={styles.saveButton}
+          style={[styles.saveButton, { backgroundColor: colors.accent }]}
           onPress={handleSaveHabit}
         >
           <Text style={styles.saveButtonText}>Create Habit 🌟</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
-          style={styles.cancelButton}
+          style={[styles.cancelButton, { borderColor: colors.textSecondary }]}
           onPress={() => router.back()}
         >
-          <Text style={styles.cancelButtonText}>Cancel ↩️</Text>
+          <Text style={[styles.cancelButtonText, { color: colors.textSecondary }]}>Cancel ↩️</Text>
         </TouchableOpacity>
       </Animated.View>
     </View>
@@ -176,8 +190,8 @@ const styles = StyleSheet.create({
     padding: 16,
     fontSize: 16,
     color: COLORS.textPrimary,
-    borderWidth: 2,
-    borderColor: '#e7e5e4',
+    borderWidth: 0.1,
+    borderColor: '#8a8988ff',
   },
   textArea: {
     height: 80,
@@ -203,8 +217,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#e7e5e4',
+    borderWidth: 0.1,
+    borderColor: '#5c5b5aff',
     shadowColor: COLORS.primaryDark,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -261,7 +275,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 16,
     alignItems: 'center',
-    borderWidth: 2,
+    // borderWidth: 2,
     borderColor: COLORS.textSecondary,
   },
   cancelButtonText: {

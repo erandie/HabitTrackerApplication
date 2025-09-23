@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { addJournal } from '../../services/journalService';
 import Animated, { FadeInDown, FadeInUp, ZoomIn } from 'react-native-reanimated';
+import { useTheme } from '@/app/(dashboard)/_layout';
 
 // Emerald green color palette
 const COLORS = {
@@ -31,6 +32,7 @@ const AddJournal = () => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [mood, setMood] = useState<'happy' | 'sad' | 'neutral' | 'excited'>('neutral');
+  const { colors } = useTheme();
 
   const handleSaveJournal = async () => {
     if (!user) {
@@ -55,19 +57,23 @@ const AddJournal = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Animated.Text 
         entering={FadeInDown.duration(600).springify()}
-        style={styles.title}
+        style={[styles.title, { color: colors.textPrimary }]}
       >
         New Journal Entry 📔
       </Animated.Text>
       
       <Animated.View entering={FadeInUp.delay(100).duration(600)} style={styles.inputContainer}>
         <TextInput
-          style={styles.input}
+          style={[styles.input, { 
+            backgroundColor: colors.backgroundWhite,
+            color: colors.textPrimary,
+            borderColor: colors.textSecondary
+          }]}
           placeholder="Entry Title (e.g., Amazing Day! 🌟)"
-          placeholderTextColor={COLORS.textSecondary}
+          placeholderTextColor={colors.textSecondary}
           value={title}
           onChangeText={setTitle}
         />
@@ -75,9 +81,13 @@ const AddJournal = () => {
 
       <Animated.View entering={FadeInUp.delay(200).duration(600)} style={styles.inputContainer}>
         <TextInput
-          style={[styles.input, styles.textArea]}
+          style={[styles.input, styles.textArea, { 
+            backgroundColor: colors.backgroundWhite,
+            color: colors.textPrimary,
+            borderColor: colors.textSecondary
+          }]}
           placeholder="What's on your mind? 💭"
-          placeholderTextColor={COLORS.textSecondary}
+          placeholderTextColor={colors.textSecondary}
           value={content}
           onChangeText={setContent}
           multiline
@@ -88,7 +98,7 @@ const AddJournal = () => {
 
       <Animated.Text 
         entering={FadeInUp.delay(300).duration(600)}
-        style={styles.sectionLabel}
+        style={[styles.sectionLabel, { color: colors.textPrimary }]}
       >
         How are you feeling? ❤️
       </Animated.Text>
@@ -99,6 +109,7 @@ const AddJournal = () => {
             key={moodKey}
             style={[
               styles.moodButton,
+              { backgroundColor: colors.backgroundWhite, borderColor: colors.textSecondary },
               mood === moodKey && [
                 styles.moodButtonActive,
                 { borderColor: moodData.color }
@@ -109,6 +120,7 @@ const AddJournal = () => {
             <Text style={styles.moodEmoji}>{moodData.emoji}</Text>
             <Text style={[
               styles.moodLabel,
+              { color: colors.textSecondary },
               mood === moodKey && styles.moodLabelActive
             ]}>
               {moodData.label}
@@ -125,17 +137,17 @@ const AddJournal = () => {
 
       <Animated.View entering={FadeInUp.delay(500).duration(600)} style={styles.buttonContainer}>
         <TouchableOpacity 
-          style={styles.saveButton}
+          style={[styles.saveButton, { backgroundColor: colors.accent }]}
           onPress={handleSaveJournal}
         >
           <Text style={styles.saveButtonText}>Save Entry 💾</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
-          style={styles.cancelButton}
+          style={[styles.cancelButton, { borderColor: colors.textSecondary }]}
           onPress={() => router.back()}
         >
-          <Text style={styles.cancelButtonText}>Cancel ↩️</Text>
+          <Text style={[styles.cancelButtonText, { color: colors.textSecondary }]}>Cancel ↩️</Text>
         </TouchableOpacity>
       </Animated.View>
     </View>
@@ -170,8 +182,8 @@ const styles = StyleSheet.create({
     padding: 16,
     fontSize: 16,
     color: COLORS.textPrimary,
-    borderWidth: 2,
-    borderColor: '#e7e5e4',
+    borderWidth: 0.1,
+    borderColor: '#707070ff',
   },
   textArea: {
     height: 120,
@@ -197,7 +209,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#e7e5e4',
+    borderColor: '#313131ff',
     shadowColor: COLORS.primaryDark,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -258,7 +270,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 16,
     alignItems: 'center',
-    borderWidth: 2,
+    // borderWidth: 2,
     borderColor: COLORS.textSecondary,
   },
   cancelButtonText: {
