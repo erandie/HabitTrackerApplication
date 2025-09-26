@@ -1,50 +1,96 @@
-# Welcome to your Expo app 👋
+# Journaling and Habit Tracker Mobile Application
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+## 📌 Short Description
 
-## Get started
+The **Journaling and Habit Tracker** mobile application helps users plan their day effectively, track habits, manage tasks, and reflect through journaling. It provides a simple and intuitive platform to structure daily routines, improve productivity, and build consistency for personal growth.
 
-1. Install dependencies
+---
+
+## ✨ Features
+
+* 🔐 **Authentication** (Firebase Auth – secure sign in/up)
+* 📝 **Journaling** – add, edit, delete, and view journal entries
+* ✅ **Habit Tracking** – create, update, and delete daily habits
+* 📅 **Task & Plan Management** – keep routines and to-dos organized
+* 🔔 **Reminders & Notifications** – stay on track with timely alerts
+* 🔎 **Search & Filter** – quickly find journal entries or habits
+* 🌙 **User-friendly UI** – clean, responsive, and intuitive interface
+
+---
+
+## 🛠️ Tech Stack
+
+* **Frontend:** React Native (Expo)
+* **Backend / Database:** Firebase (Authentication + Firestore)
+* **State Management:** React Context
+* **Navigation:** React Navigation (Stack & Tab navigation)
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+* Node.js and npm installed
+* Expo CLI installed (`npm install -g expo-cli`)
+
+### Setup & Run
+
+1. Clone the repo:
+
+   ```bash
+   git clone https://github.com/your-username/HabitTracker.git
+   cd HabitTracker
+   ```
+2. Install dependencies:
 
    ```bash
    npm install
    ```
-
-2. Start the app
+3. Start the app:
 
    ```bash
    npx expo start
    ```
+4. Run on your device using Expo Go app (scan QR code) or an emulator.
 
-In the output, you'll find options to open the app in a
+---
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## 📱 Build (APK)
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+👉 [Download APK here](https://expo.dev/accounts/erandie/projects/HabitTracker/builds/abe1b7c8-a2e4-4f5c-a720-a8bd88c251cd)
 
-## Get a fresh project
+---
 
-When you're ready, run:
+## 🎥 Demo Video
 
-```bash
-npm run reset-project
-```
+👉 [YouTube Link – Coming Soon]
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+---
 
-## Learn more
+## 📂 Project Submission
 
-To learn more about developing your project with Expo, look at the following resources:
+* ✅ Public GitHub Repo
+* ✅ APK Build
+* ✅ Demo Video (2–5 mins)
+* ✅ Documentation & README
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+---
 
-## Join the community
+## 📊 Evaluation Coverage
 
-Join our community of developers creating universal apps.
+* **Authentication** – Firebase Auth
+* **CRUD** – Habits, Tasks, Journals
+* **State Management** – Context API
+* **Navigation** – Stack + Tab
+* **UI/UX** – Clean & intuitive
+* **Build** – APK provided
+* **GitHub Commits** – Maintained
+* **Demo Video** – (to be added)
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+---
+
+## 👩‍💻 Developer
+
+**Erandi Gamage**
+Undergraduate Software Engineering Student
