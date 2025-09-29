@@ -64,7 +64,7 @@ The **Journaling and Habit Tracker** mobile application helps users plan their d
 
 ## 🎥 Demo Video
 
-👉 [YouTube Link – Coming Soon]
+👉 [YouTube Link – (https://youtu.be/TyvUcWnK4_A)]
 
 ---
 
