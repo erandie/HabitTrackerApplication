@@ -58,7 +58,7 @@ The **Journaling and Habit Tracker** mobile application helps users plan their d
 
 ## 📱 Build (APK)
 
-👉 [Download APK here](https://expo.dev/accounts/erandie/projects/HabitTracker/builds/abe1b7c8-a2e4-4f5c-a720-a8bd88c251cd)
+👉 [Download APK here](https://expo.dev/artifacts/eas/qEo5Na3XFLEgQ4ztPYbS8b.apk)
 
 ---
 
